@@ -1,0 +1,280 @@
+# Get all the external hyperlinks in a presentation
+
+This topic shows how to use the classes in the Open XML SDK for
+Office to get all the external hyperlinks in a presentation
+programmatically.
+
+--------------------------------------------------------------------------------
+## Getting a PresentationDocument Object
+In the Open XML SDK, the `DocumentFormat.OpenXml.Packaging.PresentationDocument` class represents a
+presentation document package. To work with a presentation document,
+first create an instance of the `PresentationDocument` class, and then work with
+that instance. To create the class instance from the document call the
+`DocumentFormat.OpenXml.Packaging.PresentationDocument.Open`
+method that uses a file path, and a Boolean value as the second
+parameter to specify whether a document is editable. Set this second
+parameter to `false` to open the file for
+read-only access, or `true` if you want to
+open the file for read/write access. In this topic, it is best to open
+the file for read-only access to protect the file against accidental
+writing. The following `using` statement
+opens the file for read-only access. In this code segment, the `fileName` parameter is a string that represents the
+path for the file from which you want to open the document.
+
+### [C#](#tab/cs-1)
+```csharp
+    // Open the presentation file as read-only.
+    using (PresentationDocument document = PresentationDocument.Open(fileName, false))
+```
+
+### [Visual Basic](#tab/vb-1)
+```vb
+        ' Open the presentation file as read-only.
+        Using document As PresentationDocument = PresentationDocument.Open(fileName, False)
+```
+***
+
+With v3.0.0+ the `DocumentFormat.OpenXml.Packaging.OpenXmlPackage.Close` method
+has been removed in favor of relying on the [using statement](https://learn.microsoft.com/dotnet/csharp/language-reference/statements/using).
+This ensures that the `System.IDisposable.Dispose` method is automatically called
+when the closing brace is reached. The block that follows the `using` statement establishes a scope for the
+object that is created or named in the `using` statement, in this case `document`.
+
+--------------------------------------------------------------------------------
+
+## Basic Presentation Document Structure 
+
+The basic document structure of a `PresentationML` document consists of a number of
+parts, among which is the main part that contains the presentation
+definition. The following text from the [ISO/IEC 29500](https://www.iso.org/standard/71691.html) specification
+introduces the overall form of a `PresentationML` package.
+
+> The main part of a `PresentationML` package
+> starts with a presentation root element. That element contains a
+> presentation, which, in turn, refers to a *slide* list, a *slide master* list, a *notes
+> master* list, and a *handout master* list. The slide list refers to
+> all of the slides in the presentation; the slide master list refers to
+> the entire slide masters used in the presentation; the notes master
+> contains information about the formatting of notes pages; and the
+> handout master describes how a handout looks.
+> 
+> A *handout* is a printed set of slides that can be provided to an
+> *audience*.
+> 
+> As well as text and graphics, each slide can contain *comments* and
+> *notes*, can have a *layout*, and can be part of one or more *custom
+> presentations*. A comment is an annotation intended for the person
+> maintaining the presentation slide deck. A note is a reminder or piece
+> of text intended for the presenter or the audience.
+> 
+> Other features that a `PresentationML`
+> document can include the following: *animation*, *audio*, *video*, and
+> *transitions* between slides.
+> 
+> A `PresentationML` document is not stored
+> as one large body in a single part. Instead, the elements that
+> implement certain groupings of functionality are stored in separate
+> parts. For example, all authors in a document are stored in one
+> authors part while each slide has its own part.
+> 
+> ISO/IEC 29500: 2016
+
+The following XML code example represents a presentation that contains
+two slides denoted by the IDs 267 and 256.
+
+```xml
+    <p:presentation xmlns:p="…" … > 
+       <p:sldMasterIdLst>
+          <p:sldMasterId
+             xmlns:rel="https://…/relationships" rel:id="rId1"/>
+       </p:sldMasterIdLst>
+       <p:notesMasterIdLst>
+          <p:notesMasterId
+             xmlns:rel="https://…/relationships" rel:id="rId4"/>
+       </p:notesMasterIdLst>
+       <p:handoutMasterIdLst>
+          <p:handoutMasterId
+             xmlns:rel="https://…/relationships" rel:id="rId5"/>
+       </p:handoutMasterIdLst>
+       <p:sldIdLst>
+          <p:sldId id="267"
+             xmlns:rel="https://…/relationships" rel:id="rId2"/>
+          <p:sldId id="256"
+             xmlns:rel="https://…/relationships" rel:id="rId3"/>
+       </p:sldIdLst>
+           <p:sldSz cx="9144000" cy="6858000"/>
+       <p:notesSz cx="6858000" cy="9144000"/>
+    </p:presentation>
+```
+
+Using the Open XML SDK, you can create document structure and
+content using strongly-typed classes that correspond to PresentationML
+elements. You can find these classes in the `DocumentFormat.OpenXml.Presentation`
+namespace. The following table lists the class names of the classes that
+correspond to the `sld`, `sldLayout`, `sldMaster`, and `notesMaster` elements.
+
+| **PresentationML Element** | **Open XML SDK Class** | **Description** |
+|---|---|---|
+| `<sld/>` | `DocumentFormat.OpenXml.Presentation.Slide` | Presentation Slide. It is the root element of SlidePart. |
+| `<sldLayout/>` | `DocumentFormat.OpenXml.Presentation.SlideLayout` | Slide Layout. It is the root element of SlideLayoutPart. |
+| `<sldMaster/>` | `DocumentFormat.OpenXml.Presentation.SlideMaster` | Slide Master. It is the root element of SlideMasterPart. |
+| `<notesMaster/>` | `DocumentFormat.OpenXml.Presentation.NotesMaster` | Notes Master (or handoutMaster). It is the root element of NotesMasterPart. |
+
+--------------------------------------------------------------------------------
+## Structure of the Hyperlink Element
+In this how-to code example, you are going to work with external
+hyperlinks. Therefore, it is best to familiarize yourself with the
+hyperlink element. The following text from the [ISO/IEC 29500](https://www.iso.org/standard/71691.html) specification
+introduces the `id` (Hyperlink Target).
+
+> Specifies the ID of the relationship whose target shall be used as the
+> target for thishyperlink.
+>
+> If this attribute is omitted, then there shall be no external
+> hyperlink target for the current hyperlink - a location in the current
+> document can still be target via the anchor attribute. If this
+> attribute exists, it shall supersede the value in the anchor
+> attribute.
+>
+> [*Example*: Consider the following `PresentationML` fragment for a hyperlink:
+
+```xml
+    <w:hyperlink r:id="rId9">
+      <w:r>
+        <w:t>https://www.example.com</w:t>
+      </w:r>
+    </w:hyperlink>
+```
+
+> The `id` attribute value of `rId9` specifies that relationship in the
+> associated relationship part item with a corresponding Id attribute
+> value must be navigated to when this hyperlink is invoked. For
+> example, if the following XML is present in the associated
+> relationship part item:
+
+```xml
+    <Relationships xmlns="…">
+      <Relationship Id="rId9" Mode="External" Target="https://www.example.com" />
+    </Relationships>
+```
+
+> The target of this hyperlink would therefore be the target of
+> relationship `rId9` - in this case,
+> https://www.example.com. *end example*]
+>
+> The possible values for this attribute are defined by the
+> ST\_RelationshipId simple type(§22.8.2.1).
+>
+> &copy; ISO/IEC 29500: 2016
+
+--------------------------------------------------------------------------------
+## How the Sample Code Works
+The sample code in this topic consists of one method that takes as a
+parameter the full path of the presentation file. It iterates through
+all the slides in the presentation and returns a list of strings that
+represent the Universal Resource Identifiers (URIs) of all the external
+hyperlinks in the presentation.
+
+### [C#](#tab/cs-2)
+```csharp
+        // Iterate through all the slide parts in the presentation part.
+        foreach (SlidePart slidePart in document.PresentationPart.SlideParts)
+        {
+            IEnumerable<Drawing.HyperlinkType> links = slidePart.Slide.Descendants<Drawing.HyperlinkType>();
+
+            // Iterate through all the links in the slide part.
+            foreach (Drawing.HyperlinkType link in links)
+            {
+                // Iterate through all the external relationships in the slide part. 
+                foreach (HyperlinkRelationship relation in slidePart.HyperlinkRelationships)
+                {
+                    // If the relationship ID matches the link ID…
+                    if (relation.Id.Equals(link.Id))
+                    {
+                        // Add the URI of the external relationship to the list of strings.
+                        ret.Add(relation.Uri.AbsoluteUri);
+                    }
+                }
+            }
+        }
+```
+
+### [Visual Basic](#tab/vb-2)
+```vb
+            ' Iterate through all the slide parts in the presentation part.
+            For Each slidePart As SlidePart In document.PresentationPart.SlideParts
+                Dim links As IEnumerable(Of Drawing.HyperlinkType) = slidePart.Slide.Descendants(Of Drawing.HyperlinkType)()
+
+                ' Iterate through all the links in the slide part.
+                For Each link As Drawing.HyperlinkType In links
+                    ' Iterate through all the external relationships in the slide part. 
+                    For Each relation As HyperlinkRelationship In slidePart.HyperlinkRelationships
+                        ' If the relationship ID matches the link ID…
+                        If relation.Id.Equals(link.Id) Then
+                            ' Add the URI of the external relationship to the list of strings.
+                            ret.Add(relation.Uri.AbsoluteUri)
+                        End If
+                    Next
+                Next
+            Next
+```
+***
+
+--------------------------------------------------------------------------------
+## Sample Code
+
+Following is the complete code sample that you can use to return the
+list of all external links in a presentation. You can use the following
+loop in your program to call the `GetAllExternalHyperlinksInPresentation` method to
+get the list of URIs in your presentation.
+
+### [C#](#tab/cs-3)
+```csharp
+if (args is [{ } fileName])
+{
+    foreach (string link in GetAllExternalHyperlinksInPresentation(fileName))
+    {
+        Console.WriteLine(link);
+    }
+}
+```
+
+### [Visual Basic](#tab/vb-3)
+```vb
+        If args.Length = 1 Then
+            Dim fileName As String = args(0)
+            For Each link As String In GetAllExternalHyperlinksInPresentation(fileName)
+                Console.WriteLine(link)
+            Next
+        End If
+```
+***
+
+Following is the complete sample code in both C\# and Visual Basic.
+
+### [C#](#tab/cs)
+```csharp
+// Returns all the external hyperlinks in the slides of a presentation.
+static IEnumerable<String> GetAllExternalHyperlinksInPresentation(string fileName)
+{
+    // Declare a list of strings.
+    List<string> ret = new List<string>();
+    // Open the presentation file as read-only.
+    using (PresentationDocument document = PresentationDocument.Open(fileName, false))
+```
+
+### [Visual Basic](#tab/vb)
+```vb
+    ' Returns all the external hyperlinks in the slides of a presentation.
+    Function GetAllExternalHyperlinksInPresentation(fileName As String) As IEnumerable(Of String)
+        ' Declare a list of strings.
+        Dim ret As New List(Of String)()
+        ' Open the presentation file as read-only.
+        Using document As PresentationDocument = PresentationDocument.Open(fileName, False)
+```
+***
+
+--------------------------------------------------------------------------------
+## See also
+
+- [Open XML SDK class library reference](https://learn.microsoft.com/office/open-xml/open-xml-sdk)
