@@ -2,6 +2,23 @@
 
 The Open XML SDK simplifies the task of manipulating Open XML packages and the underlying Open XML schema elements within a package. The classes in the Open XML SDK encapsulate many common tasks that developers perform on Open XML packages, so that you can perform complex operations with just a few lines of code.
 
+## Rust package
+
+Add `ooxmlsdk` to your Cargo project:
+
+```toml
+[dependencies]
+ooxmlsdk = "0.5.1"
+```
+
+The documentation examples in this book are backed by real Rust files under `listings/` and are checked with `cargo test --workspace`.
+
+For example, this function creates a minimal WordprocessingML package, adds the main document part, and writes the package to memory:
+
+```rust
+{{#include ../listings/getting-started/src/lib.rs:full_example}}
+```
+
 ## Available packages
 
 The SDK is available as a collection of NuGet packages that support .NET 3.5+, .NET Standard 2.0, .NET 6+, and [other supported platforms](https://learn.microsoft.com/dotnet/standard/net-standard) for those targets. For information about installing packages, please see [the NuGet documentation](https://learn.microsoft.com/nuget/quickstart/install-and-use-a-package-in-visual-studio). The following are the available packages:
