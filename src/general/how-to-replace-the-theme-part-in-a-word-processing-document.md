@@ -4,6 +4,20 @@ This example replaces the WordprocessingML package's theme part with caller-prov
 
 A theme part contains DrawingML theme information such as color scheme, font scheme, and format scheme. In a word-processing document, the main document part can have an optional relationship to a theme part.
 
+The same theme model is used across Office document families. A theme can affect fonts, colors, fills, backgrounds, and effects for themed objects.
+
+## Theme element structure
+
+The root element is `a:theme`, represented by `ooxmlsdk::schemas::a::Theme`. Its `themeElements` child is required and carries the base color, font, and format schemes. Other children are optional:
+
+| XML element | Rust type | Purpose |
+|---|---|---|
+| `a:themeElements` | `ooxmlsdk::schemas::a::ThemeElements` | Base theme formatting |
+| `a:objectDefaults` | `ooxmlsdk::schemas::a::ObjectDefaults` | Default formatting for objects |
+| `a:extraClrSchemeLst` | `ooxmlsdk::schemas::a::ExtraColorSchemeList` | Additional color schemes |
+| `a:custClrLst` | `ooxmlsdk::schemas::a::CustomColorList` | Custom colors |
+| `a:extLst` | `ooxmlsdk::schemas::a::OfficeStyleSheetExtensionList` | Future extensibility |
+
 ## Replace the theme XML
 
 ```rust
@@ -20,6 +34,8 @@ The function:
 6. Saves the updated package to memory.
 
 The `theme_xml` argument must be valid theme part XML. `set_data` writes bytes to the part; it does not prove that the XML is semantically valid for every Office version.
+
+You can extract a valid theme XML payload from another `.docx` or `.thmx` file by treating the file as a ZIP package and locating its theme part.
 
 ## Theme part relationship
 

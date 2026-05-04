@@ -4,6 +4,20 @@ This example reads the raw XML payload of the Wordprocessing comments part from 
 
 The comments part is an optional child of the main document part. In Rust, that optional relationship is represented as `Option`.
 
+## Comments element
+
+The comments part root is `w:comments`. It contains the comments defined in the current WordprocessingML document. A typical part contains zero or more `w:comment` children:
+
+```xml
+<w:comments xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:comment w:id="0" w:author="Author">
+    <!-- comment content -->
+  </w:comment>
+</w:comments>
+```
+
+The schema shape is a sequence of `comment` elements with `minOccurs="0"` and `maxOccurs="unbounded"`.
+
 ## Read the comments part
 
 ```rust

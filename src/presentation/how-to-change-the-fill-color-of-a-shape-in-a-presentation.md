@@ -19,6 +19,21 @@ Shape fill color is stored in the slide XML, usually under a shape's `<p:spPr/>`
 
 The `val` attribute stores the RGB color as six hexadecimal digits.
 
+## Shape tree
+
+Slide content lives under the shape tree (`p:spTree`). It contains the non-visual group properties, group shape properties, and then zero or more drawing objects:
+
+| Element | Meaning |
+|---|---|
+| `p:sp` | Shape |
+| `p:grpSp` | Group shape |
+| `p:graphicFrame` | Graphic frame |
+| `p:cxnSp` | Connection shape |
+| `p:pic` | Picture |
+| `p:extLst` | Extension list |
+
+The upstream sample changes the first shape on the first slide, so the test file must contain at least one shape. A production writer should select by a stable shape ID or name instead.
+
 ## Rust workflow
 
 Use `PresentationDocument` to find the slide, then read the slide XML:

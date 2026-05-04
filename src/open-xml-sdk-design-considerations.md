@@ -19,10 +19,13 @@ Before using `ooxmlsdk`, be clear about the level of abstraction it provides.
 - It does not calculate Word layout, paginate documents, refresh spreadsheet data, or recalculate Excel formulas.
 - It does not guarantee that arbitrary generated XML is valid for every target Office version.
 - It does not hide the OOXML package structure; you still need to understand parts, relationships, content types, and the relevant schema.
+- It does not automatically repair files that an Office application would repair interactively.
 
 ## Rust API expectations
 
 Use normal Rust error handling around package operations. Open, parse, and save calls can fail because input packages may be malformed, relationships may point to missing parts, XML may not match the generated schema, or the output writer may fail.
+
+Keep ownership explicit. Load a package into a document type, mutate typed parts or root elements through `&mut` bindings, then call `save` with an output writer or file path flow that your application owns. When direct XML access is unavoidable, treat it as package-level editing and revalidate the affected parts.
 
 When you only need package read/write APIs, the default `parts` feature is enough. Enable optional features deliberately:
 

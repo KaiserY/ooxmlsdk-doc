@@ -54,6 +54,17 @@ For validation APIs:
 ooxmlsdk = { version = "0.6.0", features = ["validators"] }
 ```
 
+## Upstream v3 concepts in Rust
+
+The upstream v3.0 migration guide describes architectural changes for .NET consumers. The same concepts usually appear differently in `ooxmlsdk`:
+
+- Package APIs are already part of the Rust crate behind the `parts` feature. There is no separate framework package to add.
+- Package and part constructors are Rust associated functions such as `new`, `new_with_settings`, `new_from_file`, and `new_from_file_with_settings`.
+- Package lifetime follows Rust ownership. There is no explicit `Close` method; let values drop after saving or after all reads are complete.
+- Part creation uses typed methods and generated relationship metadata, including helpers such as `add_new_part`, `add_image_part`, `add_custom_xml_part`, and content-type-specific variants where supported.
+- Runtime configuration uses Cargo features plus `OpenSettings`. There is no dynamic feature-collection API equivalent.
+- Markup Compatibility and Extensibility processing is feature gated by `mce`. Enable it only for examples or applications that need compatibility processing while loading package roots.
+
 ## Documentation migration
 
 When porting a page from the original upstream documentation:

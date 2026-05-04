@@ -2,6 +2,7 @@
 resolver = "3"
 members = [
   "listings/getting-started",
+  "listings/general",
   "listings/presentation",
   "listings/spreadsheet",
   "listings/word",

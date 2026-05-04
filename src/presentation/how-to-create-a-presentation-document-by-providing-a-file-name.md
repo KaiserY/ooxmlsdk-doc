@@ -18,6 +18,20 @@ The listing crate builds test fixtures with that structure so every documented r
 {{#include ../../listings/presentation/src/lib.rs:open_presentation_read_only}}
 ```
 
+## PresentationML roots
+
+The main presentation part has a single `p:presentation` root. A usable presentation normally needs related slide, slide master, slide layout, and theme parts. The corresponding generated Rust schema types are:
+
+| PresentationML element | Rust type |
+|---|---|
+| `p:presentation` | `ooxmlsdk::schemas::p::Presentation` |
+| `p:sld` | `ooxmlsdk::schemas::p::Slide` |
+| `p:sldMaster` | `ooxmlsdk::schemas::p::SlideMaster` |
+| `p:sldLayout` | `ooxmlsdk::schemas::p::SlideLayout` |
+| `a:theme` | `ooxmlsdk::schemas::a::Theme` |
+
+The `p:presentation` root usually references slide masters, notes masters, handout masters, and slides by relationship IDs. Slide IDs are stored in `p:sldIdLst`; the relationship ID points to the slide part, while the numeric slide ID is part of the presentation markup.
+
 ## Creation status
 
 `ooxmlsdk 0.6.0` can read, navigate, and save packages, and it exposes package-building primitives. This chapter does not yet publish a from-scratch presentation writer because a production example must validate:

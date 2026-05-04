@@ -4,6 +4,8 @@ This page originally documented compiler diagnostic IDs used by the upstream SDK
 
 `ooxmlsdk 0.6.0` does not currently define custom Rust diagnostic IDs for obsolete or experimental APIs. Rust users should rely on the normal Rust compiler diagnostics, Cargo feature errors, crate documentation, and `ooxmlsdk::common::SdkError` values returned at runtime.
 
+The upstream `OOXML0001` diagnostic is specific to an experimental .NET package abstraction and does not apply to this Rust crate.
+
 ## Common Rust diagnostics
 
 Typical issues while using `ooxmlsdk` include:
@@ -24,3 +26,7 @@ Package operations return `Result` and may fail because:
 - Output writing fails.
 
 Handle these cases with normal Rust error propagation, usually by returning `Result` from your own helper and using `?` on package operations.
+
+## Validator errors
+
+With the `validators` feature enabled, validation APIs return `ValidationErrorInfo` values. Those values include a validation category and, where available, an ID derived from the failed validator, such as `required`, `enum`, or `field_value`. Treat these as runtime validation data rather than compiler diagnostics.

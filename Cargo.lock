@@ -107,6 +107,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "ooxmlsdk-doc-general"
+version = "0.1.0"
+dependencies = [
+ "ooxmlsdk",
+]
+
+[[package]]
 name = "ooxmlsdk-doc-getting-started"
 version = "0.1.0"
 dependencies = [

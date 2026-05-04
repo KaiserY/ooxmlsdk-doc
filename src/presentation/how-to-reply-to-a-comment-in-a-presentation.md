@@ -6,6 +6,17 @@ Comment replies are more complex than simple comment insertion because PowerPoin
 
 Classic comments are stored as `<p:cm/>` entries in a slide comment part. Modern comments and replies can involve Office extension namespaces and additional relationship targets. A reply must preserve author identity, timestamps, threading metadata, and the relationship between the slide and its comment parts.
 
+## Reply workflow
+
+The upstream modern-comments sample follows this shape:
+
+1. Open the presentation and find or create the comment authors part.
+2. Match the reply author by name and initials, or create a new author record.
+3. Locate the first or target slide part and read its comment parts.
+4. Iterate existing comments and choose the comment that should receive a reply.
+5. Find or create that comment's reply list.
+6. Append the reply text with the author ID and timestamp.
+
 ## Rust workflow
 
 Start by opening the presentation and locating the target slide:

@@ -18,6 +18,22 @@ The theme root contains theme elements, optional object defaults, extra color sc
 
 In a PresentationML package, the presentation part usually owns the theme relationship.
 
+The generated Rust root type is `ooxmlsdk::schemas::a::Theme`. Its main child types correspond to the theme schema:
+
+| XML element | Rust type | Purpose |
+|---|---|---|
+| `a:themeElements` | `ooxmlsdk::schemas::a::ThemeElements` | Base color, font, and format schemes |
+| `a:objectDefaults` | `ooxmlsdk::schemas::a::ObjectDefaults` | Object defaults |
+| `a:extraClrSchemeLst` | `ooxmlsdk::schemas::a::ExtraColorSchemeList` | Extra color schemes |
+| `a:custClrLst` | `ooxmlsdk::schemas::a::CustomColorList` | Custom colors |
+| `a:extLst` | `ooxmlsdk::schemas::a::OfficeStyleSheetExtensionList` | Extensibility |
+
+## Full presentation theme replacement
+
+The upstream sample does more than copy `theme1.xml`: it copies a slide master from a source presentation, reuses the target slide master relationship ID, copies the source theme, then relinks every slide to a layout of the same type. If a slide has no matching layout type, the sample uses a default layout such as "Title and Content".
+
+That workflow matters because a presentation theme is normally coupled with slide masters and layouts. Replacing only the theme part can leave slides pointing at layouts whose placeholder geometry, fonts, or colors no longer match the intended design.
+
 ## Rust workflow
 
 Open the source presentation read-only, open or copy the target package, and use the presentation part's theme accessor to read the theme data. The general package navigation pattern is:

@@ -1,6 +1,8 @@
 # About ooxmlsdk
 
-Open XML is an open standard for word-processing documents, presentations, and spreadsheets. A `.docx`, `.pptx`, or `.xlsx` file is an Open Packaging Conventions package: a ZIP archive containing XML parts, binary parts, content types, and relationship files.
+Open XML is an open standard for word-processing documents, presentations, and spreadsheets. It was designed so applications can manipulate document data without depending on older proprietary binary formats or the original office application that created the file.
+
+A `.docx`, `.pptx`, or `.xlsx` file is an Open Packaging Conventions package: a ZIP archive containing XML parts, binary parts, content types, and relationship files.
 
 `ooxmlsdk` exposes that package structure through Rust types. You can open a package, navigate to strongly typed parts such as `WordprocessingDocument`, `PresentationDocument`, and `SpreadsheetDocument`, parse root XML elements into generated schema structs, modify those structs, and save the package again.
 
@@ -16,6 +18,35 @@ An Open XML package contains:
 
 `ooxmlsdk` keeps these package concepts visible. The crate does not hide the file format behind a document-editor abstraction; instead, it gives you typed access to the package and schema model.
 
+The ZIP container also gives package consumers random access to parts. For example, a tool can inspect a slide part without parsing every slide in the presentation, or remove a comments part from a word-processing package without reading all body paragraphs.
+
+## Document families
+
+WordprocessingML packages are built around a required main document story. Optional stories and related parts can include:
+
+- glossary document,
+- headers and footers,
+- comments,
+- text boxes,
+- footnotes and endnotes.
+
+PresentationML packages can contain:
+
+- slide masters,
+- notes masters,
+- handout masters,
+- slide layouts,
+- slides and notes.
+
+SpreadsheetML packages can contain:
+
+- a required workbook part,
+- worksheets,
+- charts,
+- tables,
+- custom XML,
+- pivot caches and PivotTables.
+
 ## Strongly typed Rust APIs
 
 The runtime crate is generated from Open XML metadata. The generated surface includes:
@@ -26,6 +57,14 @@ The runtime crate is generated from Open XML metadata. The generated surface inc
 - Common package, relationship, XML, and error types in `ooxmlsdk::common`.
 
 Most package operations return `Result<_, ooxmlsdk::common::SdkError>` or can be used with `Box<dyn std::error::Error>` in examples. Optional package relationships are represented with `Option`, and collections are exposed through Rust iterators or vectors depending on the generated schema shape.
+
+## Common tasks
+
+`ooxmlsdk` supports the same broad task categories that matter when working with Open XML packages:
+
+- **Strongly typed package and schema access**: use generated Rust types instead of hand-writing every element and attribute name.
+- **Content construction, search, and manipulation**: traverse package relationships, inspect XML parts, load generated roots, and save updated packages.
+- **Validation-oriented workflows**: use optional validator APIs where available, and otherwise rely on explicit `Result` handling plus package/schema tests.
 
 ## Feature model
 

@@ -32,4 +32,8 @@ Recent commits use short imperative or conventional-style messages, for example 
 
 ## Agent-Specific Instructions
 
+Start from local evidence. Use `rg` or `rg --files` first, then read only the files needed for the task. Keep summaries diff-based and avoid pasting large generated snippets or broad search output unless requested.
+
+Run commands from the repository root. Cargo generation, formatting, testing, clippy, and bench commands must run sequentially in the default `target/` directory; do not set `CARGO_TARGET_DIR`. If Cargo reports a target lock, wait for Cargo rather than probing processes.
+
 Preserve user work in the tree. Do not revert unrelated changes. Keep licensing context in `src/preface.md` intact.

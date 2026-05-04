@@ -4,6 +4,8 @@
 
 This page is about Rust crate features. The upstream SDK feature-collection extension model does not have a direct equivalent in `ooxmlsdk 0.6.0`.
 
+Cargo features are compile-time switches. They choose which optional modules and dependencies are built into your binary; they are not per-package state, event hooks, or service registrations.
+
 ## Default features
 
 Most users can use the crate with its default features:
@@ -62,3 +64,7 @@ ooxmlsdk = { version = "0.6.0", features = ["validators"] }
 ```
 
 Validation support is opt-in so projects that only need package parsing, modification, and round-tripping do not need to compile validator dependencies.
+
+## Not yet modeled
+
+The upstream runtime feature collection includes behaviors such as package events, part events, disposal callbacks, random-number services, and automatic paragraph ID generation. Those are not exposed as `ooxmlsdk 0.6.0` APIs. When porting examples that depend on those services, write the state management explicitly in Rust or leave the page unchanged until a tested crate API exists.

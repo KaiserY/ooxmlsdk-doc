@@ -16,6 +16,19 @@
 - `flat-opc`: enables Flat OPC read/write helpers and depends on `parts`.
 - `mce`: enables Markup Compatibility and Extensibility processing and depends on `parts`.
 
+### Package and schema coverage
+
+The upstream .NET 3.x changelog calls out package save support, part creation metadata, MCE processing, Flat OPC, validation diagnostics, and newer Office namespaces. In `ooxmlsdk 0.6.0`, those areas map to Rust APIs and Cargo features instead of a separate framework package:
+
+- Package read/write flows use `WordprocessingDocument`, `SpreadsheetDocument`, and `PresentationDocument` constructors such as `new`, `new_from_file`, and `new_with_settings`, then write with `save`.
+- Generated part helpers carry relationship and content-type metadata through typed part APIs. Prefer methods such as typed child-part accessors, `get_part_by_id`, `get_parts_of_type`, and relationship-specific helpers over raw package editing.
+- Newer generated schema and part coverage is included in the runtime. This includes post-Office 2007 namespaces and relationships for later DrawingML, spreadsheet extensions, threaded comments, SVG media, 3D model references, and Microsoft 365-era additions.
+- Markup Compatibility and Extensibility behavior is enabled by `mce`; it can process known `mc:AlternateContent` and package-level compatibility flows during loading.
+- Flat OPC support is enabled by `flat-opc`; it focuses on Wordprocessing Flat OPC package XML and preserves binary parts during round trips.
+- Validation APIs are enabled by `validators`. The validation surface is useful for schema-oriented checks, but it is intentionally narrower than the core package read/write path.
+
+Some upstream .NET features do not have a one-to-one Rust API. There is no runtime feature collection equivalent to `IFeatureCollection`, and unknown-element DOM editing plus markup-compatibility validator behavior are still future work in `ooxmlsdk`.
+
 ### Feature layout
 
 Most users can depend on the crate directly:

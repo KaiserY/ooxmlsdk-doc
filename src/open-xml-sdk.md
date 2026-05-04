@@ -6,12 +6,17 @@ Office Open XML is standardized by [ECMA-376](https://www.ecma-international.org
 
 The crate provides generated schema types, serializers, deserializers, and strongly typed package parts. Its API is Rust-native: methods return `Result`, package and part types are regular Rust structs, and optional functionality is controlled by Cargo features.
 
+`ooxmlsdk` works at both layers of the format: the package graph and the XML schema data. You can open an existing document package, follow typed relationships to well-known parts, read or replace part data, load generated root elements, and save the package back to a writer.
+
 ## Start here
 
 - [Getting started](getting-started.md)
 - [About ooxmlsdk](about-the-open-xml-sdk.md)
 - [What's new in ooxmlsdk](what-s-new-in-the-open-xml-sdk.md)
 - [Design considerations](open-xml-sdk-design-considerations.md)
+
+## Migrating
+
 - [Migration notes](migration/migrate-v2-to-v3.md)
 
 ## Working with packages

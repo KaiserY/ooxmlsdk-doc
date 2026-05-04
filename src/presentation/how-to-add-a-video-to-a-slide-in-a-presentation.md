@@ -21,6 +21,20 @@ A slide can reference a video file from non-visual picture properties:
 
 The slide part relationship item resolves `rVideo1` to the stored media data. A complete PowerPoint-compatible video insertion normally also includes a preview image, media reference relationship, timing data, and shape geometry.
 
+`videoFile` is defined inside the non-visual properties of the picture or shape. The visible object sits on the slide like any other drawing object, while playback is described in the slide timing tree. The non-visual drawing ID is used by that timing data to refer back to the media object.
+
+The video timing schema uses `CT_TLMediaNodeVideo`, whose common media node child is required and whose `fullScrn` attribute defaults to `false`.
+
+The full insertion shape normally includes:
+
+- `p:cNvPr`, including an `a:hlinkClick` action of `ppaction://media`,
+- `p:cNvPicPr` and picture locks,
+- `p:nvPr` with `a:videoFile`,
+- a video relationship to the media data part,
+- a media reference relationship,
+- an image part plus `a:blip` for the preview frame,
+- shape properties such as `a:off`, `a:stretch`, and `a:fillRect`.
+
 ## Rust workflow
 
 Start by navigating to the target slide through the presentation part:

@@ -29,6 +29,12 @@ The available process modes are:
 
 `ProcessLoadedPartsOnly` and `ProcessAllParts` are only available when the `mce` feature is enabled.
 
+The following settings match the upstream example that preprocesses every package part for an Office 2007 target:
+
+```rust
+{{#include ../../listings/general/src/lib.rs:mce_open_settings}}
+```
+
 ## Target file format version
 
 `MarkupCompatibilityProcessSettings` also includes `target_file_format_version`. This value tells the processor which Office-era namespaces should be treated as understood.
@@ -45,6 +51,10 @@ Available values include:
 
 The default target is `Office2007`.
 
+Setting the target to `Office2013`, for example, means Office 2010 and Office 2013 era namespaces are treated as understood, while later namespaces are still candidates for compatibility processing.
+
 ## Saving after processing
 
 MCE processing changes the loaded root elements. If you save a package after processing, the saved package reflects the processed content. Use `NoProcess` when you want to inspect or round-trip MCE markup without filtering it.
+
+Without the `mce` feature, the generated XML reader/writer still preserves common compatibility markup for stable round trips, including `mc:*` attributes and `mc:AlternateContent`. The feature is needed when your application wants the crate to actively choose compatibility branches and filter unknown content during loading.

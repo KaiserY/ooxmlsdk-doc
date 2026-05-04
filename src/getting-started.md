@@ -21,6 +21,20 @@ For example, this function opens a WordprocessingML package, confirms that the m
 {{#include ../listings/getting-started/src/lib.rs:full_example}}
 ```
 
+## Crate modules
+
+The always-available modules are:
+
+- `common`: shared package data types and errors.
+- `schemas`: generated schema structs and simple XML parsing/serialization support.
+- `sdk`: package and part traits, open settings, relationship helpers, and feature-related settings.
+- `simple_type`: generated simple type support.
+
+Feature-gated modules are:
+
+- `parts`: package-level APIs behind the `parts` feature.
+- `validator`: optional validator APIs behind the `validators` feature.
+
 ## Feature flags
 
 `ooxmlsdk` 0.6.0 has a small public feature surface:
@@ -51,3 +65,17 @@ For MCE processing during package open and root loading:
 [dependencies]
 ooxmlsdk = { version = "0.6.0", default-features = false, features = ["mce"] }
 ```
+
+## Package API
+
+With `parts` enabled, use the package type that matches the document family:
+
+- `WordprocessingDocument` for `.docx` and related WordprocessingML packages.
+- `SpreadsheetDocument` for `.xlsx` and related SpreadsheetML packages.
+- `PresentationDocument` for `.pptx` and related PresentationML packages.
+
+Common operations include opening packages with `new`, `new_with_settings`, `new_from_file`, or `new_from_file_with_settings`; saving with `save`; inspecting relationships and parts; and accessing well-known child parts through typed methods such as `main_document_part`, `workbook_part`, `presentation_part`, and `worksheet_parts`.
+
+## Version coverage
+
+`ooxmlsdk` treats Office 2007 as the compatibility baseline while generating Rust support for newer namespaces and parts present in its checked-in metadata. That includes Office 2010, 2013, 2016, 2019, 2021, and Microsoft 365-era extensions tracked by the crate.
