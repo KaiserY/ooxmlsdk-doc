@@ -10,6 +10,8 @@ Deleting text from a cell is a worksheet XML edit. If the cell uses the shared s
 
 Removing the text can mean removing the cell, removing its `<v/>` value, or changing the cell type depending on the desired workbook behavior.
 
+The upstream sample also removes the shared string table entry when no other cell uses it. That is a package-wide edit: after removing one `si` entry, every later shared string index referenced by every worksheet cell must be decremented. If you do not rewrite those indexes correctly, unrelated cells can display the wrong text.
+
 ## Rust workflow
 
 Read cell values first so you know which cell and storage form you are editing:

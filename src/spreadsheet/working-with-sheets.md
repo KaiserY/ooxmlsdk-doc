@@ -2,6 +2,8 @@
 
 Sheets are workbook entries that point to sheet parts. The most common sheet type is a worksheet, which stores a grid of rows and cells. Workbooks can also contain chartsheets, dialog sheets, and macro sheets.
 
+Sheets are where most spreadsheet work happens. Worksheets store rows, cells, formulas, formatting references, tables, filters, drawings, and other grid-connected features. Chartsheets store a chart as its own sheet, and dialog sheets represent legacy custom dialog UI.
+
 ## Workbook sheet list
 
 The workbook part stores sheet metadata:
@@ -44,3 +46,7 @@ For display names or hidden state, read the workbook sheet list:
 ## Cell basics
 
 Rows are stored as `<row/>` elements and cells as `<c/>` elements. Cell references use A1 notation such as `A1` or `B2`. The `<v/>` value is either the raw value or an index into another structure, depending on the cell type.
+
+The smallest valid blank worksheet is a `worksheet` root with an empty `sheetData` child. Optional sheet properties can appear before `sheetData`; optional supporting features such as protection, filters, drawings, and table references can appear after it.
+
+In ooxmlsdk 0.6.0, generated schema types include `Worksheet`, `SheetData`, `Row`, `Cell`, `CellValue`, `Chartsheet`, and `Drawing`. Prefer typed part accessors such as `WorkbookPart::worksheet_parts(&document)` and `WorkbookPart::chartsheet_parts(&document)` when traversing package structure.

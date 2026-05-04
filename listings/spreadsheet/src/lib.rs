@@ -1,4 +1,5 @@
 // ANCHOR: open_spreadsheet_read_only
+use std::collections::BTreeMap;
 use std::path::Path;
 
 use ooxmlsdk::parts::spreadsheet_document::SpreadsheetDocument;
@@ -64,6 +65,56 @@ pub fn get_cell_values(path: &Path) -> Result<Vec<(String, String)>, Box<dyn std
 }
 // ANCHOR_END: get_cell_values
 
+// ANCHOR: get_defined_names
+pub fn get_defined_names(
+  path: &Path,
+) -> Result<BTreeMap<String, String>, Box<dyn std::error::Error>> {
+  let document = SpreadsheetDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let workbook_part = document.workbook_part()?;
+  let workbook_xml = workbook_part.data_as_str(&document)?.unwrap_or_default();
+
+  Ok(extract_defined_names(workbook_xml))
+}
+// ANCHOR_END: get_defined_names
+
+// ANCHOR: get_hidden_rows_or_columns
+pub fn get_hidden_rows_or_columns(
+  path: &Path,
+  sheet_name: &str,
+  detect_rows: bool,
+) -> Result<Vec<u32>, Box<dyn std::error::Error>> {
+  let document = SpreadsheetDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let workbook_part = document.workbook_part()?;
+  let workbook_xml = workbook_part.data_as_str(&document)?.unwrap_or_default();
+  let Some(sheet_index) = extract_sheet_names(workbook_xml)
+    .iter()
+    .position(|name| name == sheet_name)
+  else {
+    return Ok(Vec::new());
+  };
+  let Some(worksheet_part) = workbook_part.worksheet_parts(&document).nth(sheet_index) else {
+    return Ok(Vec::new());
+  };
+  let worksheet_xml = worksheet_part.data_as_str(&document)?.unwrap_or_default();
+
+  Ok(if detect_rows {
+    extract_hidden_rows(worksheet_xml)
+  } else {
+    extract_hidden_columns(worksheet_xml)
+  })
+}
+// ANCHOR_END: get_hidden_rows_or_columns
+
+// ANCHOR: get_hidden_worksheets
+pub fn get_hidden_worksheets(path: &Path) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+  let document = SpreadsheetDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let workbook_part = document.workbook_part()?;
+  let workbook_xml = workbook_part.data_as_str(&document)?.unwrap_or_default();
+
+  Ok(extract_hidden_sheet_names(workbook_xml))
+}
+// ANCHOR_END: get_hidden_worksheets
+
 fn lazy_settings() -> OpenSettings {
   OpenSettings {
     open_mode: PackageOpenMode::Lazy,
@@ -82,6 +133,27 @@ fn extract_sheet_names(xml: &str) -> Vec<String> {
     };
     let tag = &rest[..tag_end];
     if let Some(name) = extract_attr(tag, "name") {
+      names.push(decode_minimal_xml_text(name));
+    }
+    rest = &rest[tag_end + 1..];
+  }
+
+  names
+}
+
+fn extract_hidden_sheet_names(xml: &str) -> Vec<String> {
+  let mut names = Vec::new();
+  let mut rest = xml;
+
+  while let Some(start) = rest.find("<sheet ") {
+    rest = &rest[start..];
+    let Some(tag_end) = rest.find('>') else {
+      break;
+    };
+    let tag = &rest[..tag_end];
+    if matches!(extract_attr(tag, "state"), Some("hidden" | "veryHidden"))
+      && let Some(name) = extract_attr(tag, "name")
+    {
       names.push(decode_minimal_xml_text(name));
     }
     rest = &rest[tag_end + 1..];
@@ -140,6 +212,81 @@ fn extract_cell_values(xml: &str, shared_strings: &[String]) -> Vec<(String, Str
   }
 
   cells
+}
+
+fn extract_defined_names(xml: &str) -> BTreeMap<String, String> {
+  let mut names = BTreeMap::new();
+  let mut rest = xml;
+
+  while let Some(start) = rest.find("<definedName ") {
+    rest = &rest[start..];
+    let Some(tag_end) = rest.find('>') else {
+      break;
+    };
+    let tag = &rest[..tag_end];
+    let Some(name) = extract_attr(tag, "name") else {
+      rest = &rest[tag_end + 1..];
+      continue;
+    };
+    let Some(end) = rest.find("</definedName>") else {
+      break;
+    };
+    names.insert(
+      decode_minimal_xml_text(name),
+      decode_minimal_xml_text(&rest[tag_end + 1..end]),
+    );
+    rest = &rest[end + "</definedName>".len()..];
+  }
+
+  names
+}
+
+fn extract_hidden_rows(xml: &str) -> Vec<u32> {
+  let mut rows = Vec::new();
+  let mut rest = xml;
+
+  while let Some(start) = rest.find("<row ") {
+    rest = &rest[start..];
+    let Some(tag_end) = rest.find('>') else {
+      break;
+    };
+    let tag = &rest[..tag_end];
+    if is_hidden(tag)
+      && let Some(index) = extract_attr(tag, "r").and_then(|value| value.parse::<u32>().ok())
+    {
+      rows.push(index);
+    }
+    rest = &rest[tag_end + 1..];
+  }
+
+  rows
+}
+
+fn extract_hidden_columns(xml: &str) -> Vec<u32> {
+  let mut columns = Vec::new();
+  let mut rest = xml;
+
+  while let Some(start) = rest.find("<col ") {
+    rest = &rest[start..];
+    let Some(tag_end) = rest.find('>') else {
+      break;
+    };
+    let tag = &rest[..tag_end];
+    if is_hidden(tag) {
+      let min = extract_attr(tag, "min").and_then(|value| value.parse::<u32>().ok());
+      let max = extract_attr(tag, "max").and_then(|value| value.parse::<u32>().ok());
+      if let (Some(min), Some(max)) = (min, max) {
+        columns.extend(min..=max);
+      }
+    }
+    rest = &rest[tag_end + 1..];
+  }
+
+  columns
+}
+
+fn is_hidden(tag: &str) -> bool {
+  matches!(extract_attr(tag, "hidden"), Some("1" | "true"))
 }
 
 fn extract_text_values(xml: &str) -> Vec<String> {
@@ -240,6 +387,38 @@ mod tests {
     );
   }
 
+  #[test]
+  fn gets_defined_names() {
+    let fixture = write_spreadsheet_fixture();
+
+    let names = get_defined_names(&fixture).expect("defined names");
+
+    assert_eq!(
+      names.get("SalesRange").map(String::as_str),
+      Some("Summary!$B$2:$B$2")
+    );
+  }
+
+  #[test]
+  fn gets_hidden_rows_or_columns() {
+    let fixture = write_spreadsheet_fixture();
+
+    let rows = get_hidden_rows_or_columns(&fixture, "Summary", true).expect("hidden rows");
+    let columns = get_hidden_rows_or_columns(&fixture, "Summary", false).expect("hidden columns");
+
+    assert_eq!(rows, vec![3]);
+    assert_eq!(columns, vec![3, 4]);
+  }
+
+  #[test]
+  fn gets_hidden_worksheets() {
+    let fixture = write_spreadsheet_fixture();
+
+    let sheets = get_hidden_worksheets(&fixture).expect("hidden worksheets");
+
+    assert_eq!(sheets, vec!["Hidden Data"]);
+  }
+
   fn write_spreadsheet_fixture() -> std::path::PathBuf {
     let path = std::env::temp_dir().join(format!(
       "ooxmlsdk-doc-spreadsheet-{}-{}.xlsx",
@@ -294,6 +473,9 @@ mod tests {
     <sheet name="Summary" sheetId="1" r:id="rId1"/>
     <sheet name="Hidden Data" sheetId="2" state="hidden" r:id="rId2"/>
   </sheets>
+  <definedNames>
+    <definedName name="SalesRange">Summary!$B$2:$B$2</definedName>
+  </definedNames>
 </workbook>"#,
     )
     .expect("write workbook");
@@ -332,6 +514,9 @@ mod tests {
       .write_all(
         br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <cols>
+    <col min="3" max="4" hidden="1"/>
+  </cols>
   <sheetData>
     <row r="1">
       <c r="A1" t="s"><v>0</v></c>
@@ -341,6 +526,7 @@ mod tests {
       <c r="A2" t="s"><v>2</v></c>
       <c r="B2"><v>42</v></c>
     </row>
+    <row r="3" hidden="1"/>
   </sheetData>
 </worksheet>"#,
       )

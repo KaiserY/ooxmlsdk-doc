@@ -14,10 +14,12 @@ Names can be workbook-scoped or sheet-scoped. Sheet-scoped names include a `loca
 
 ## Rust workflow
 
-Open the workbook part and inspect `xl/workbook.xml`. The worksheet list helper uses the same workbook XML read path:
+Open the workbook part and inspect `xl/workbook.xml`:
 
 ```rust
-{{#include ../../listings/spreadsheet/src/lib.rs:list_worksheets}}
+{{#include ../../listings/spreadsheet/src/lib.rs:get_defined_names}}
 ```
 
-This page does not yet include a tested named-range parser. Add one to `listings/spreadsheet` before publishing final code.
+The function returns an ordered map from defined-name text to the workbook expression stored in the element body. If the workbook has no `<definedNames/>` collection, the map is empty.
+
+The element body can be a plain range, a sheet-qualified range, or a formula-like expression. Do not treat every value as a rectangular cell range without validating it first.

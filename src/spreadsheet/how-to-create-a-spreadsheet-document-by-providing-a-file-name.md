@@ -2,6 +2,8 @@
 
 Creating an `.xlsx` from scratch requires package relationships, content types, a workbook part, a workbook relationship item, and at least one worksheet part.
 
+Choose the package type and file extension together. A normal workbook uses `.xlsx`; macro-enabled workbooks and templates use different extensions and content types. Excel can reject a file when the package type and extension do not match.
+
 ## Minimal package pieces
 
 A minimal workbook includes:
@@ -17,5 +19,7 @@ The `listings/spreadsheet` fixture builds this structure so the documented reade
 ```rust
 {{#include ../../listings/spreadsheet/src/lib.rs:open_spreadsheet_read_only}}
 ```
+
+At the SpreadsheetML layer, the workbook root owns the `sheets` collection. Each `sheet` entry stores the display name, a workbook-local `sheetId`, and an `r:id` relationship to the worksheet part. The worksheet part itself owns the `worksheet` root and `sheetData`.
 
 This chapter does not yet publish a from-scratch writer. A final writer should validate relationship ids, sheet ids, content type overrides, workbook XML, worksheet XML, and save behavior.

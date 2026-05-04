@@ -17,10 +17,10 @@ Column definitions can cover ranges with `min` and `max`, so a single `<col/>` e
 
 ## Rust workflow
 
-Read the target worksheet XML and inspect `<cols/>` and `<row/>` elements:
+Find the sheet entry by name, resolve the corresponding worksheet part, then inspect `<cols/>` and `<row/>` elements:
 
 ```rust
-{{#include ../../listings/spreadsheet/src/lib.rs:get_worksheet_xml}}
+{{#include ../../listings/spreadsheet/src/lib.rs:get_hidden_rows_or_columns}}
 ```
 
-This first-pass page does not include a dedicated hidden row/column parser yet. Add one to `listings/spreadsheet` before publishing final code.
+Rows and columns are numbered starting at 1. Hidden rows can be collected directly from the `r` attribute of hidden `row` elements. Hidden columns need one extra step: expand every hidden `col` range from `min` through `max`, inclusive.

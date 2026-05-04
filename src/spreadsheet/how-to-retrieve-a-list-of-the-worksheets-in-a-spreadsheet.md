@@ -10,6 +10,8 @@ Worksheet names are stored in the workbook part, not inside the worksheet parts.
 
 The helper opens the workbook part, reads `xl/workbook.xml`, and extracts each `<sheet name="..."/>` value. The same workbook XML also contains `sheetId`, `r:id`, and optional state attributes such as `hidden`.
 
+The returned list can be empty only for an invalid or unusual workbook; a well-formed spreadsheet normally has at least one sheet entry.
+
 ## Workbook markup
 
 ```xml
@@ -20,3 +22,5 @@ The helper opens the workbook part, reads `xl/workbook.xml`, and extracts each `
 ```
 
 Use `WorkbookPart::worksheet_parts(&document)` when you need the actual worksheet XML. Use workbook XML when you need workbook metadata such as names and visibility state.
+
+The workbook `sheet` element is metadata, not the worksheet part itself. Resolve the `r:id` relationship when you need to move from a listed sheet to its worksheet XML.

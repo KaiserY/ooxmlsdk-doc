@@ -10,6 +10,12 @@ Worksheet data lives in worksheet parts related from the workbook part. Use the 
 
 This returns one XML string per worksheet part. From there you can inspect `<sheetData/>`, dimensions, merged cells, column definitions, page setup, tables, drawings, or other worksheet-level markup.
 
+If you need user-facing worksheet metadata, inspect the workbook `sheets` collection instead of only walking worksheet parts. Each `sheet` element carries the display `name`, workbook-local `sheetId`, relationship id, and optional visibility state. The relationship id points from the workbook part to the actual worksheet part.
+
+```rust
+{{#include ../../listings/spreadsheet/src/lib.rs:list_worksheets}}
+```
+
 ## Worksheet markup
 
 ```xml

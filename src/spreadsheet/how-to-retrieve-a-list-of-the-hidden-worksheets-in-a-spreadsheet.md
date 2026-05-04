@@ -15,10 +15,10 @@ The worksheet part itself does not carry the display name or workbook visibility
 
 ## Rust workflow
 
-Read the workbook sheet list and filter entries with a hidden state. The listing below extracts worksheet names from the workbook XML; a hidden-sheet helper can extend the same traversal by reading the `state` attribute.
+Read the workbook sheet list and filter entries with a hidden state:
 
 ```rust
-{{#include ../../listings/spreadsheet/src/lib.rs:list_worksheets}}
+{{#include ../../listings/spreadsheet/src/lib.rs:get_hidden_worksheets}}
 ```
 
-Use `worksheet_parts(&document)` only after resolving which sheet entry you want to inspect.
+The workbook XML is the source of truth for this query. `worksheet_parts(&document)` gives access to worksheet content, but hidden state is part of the workbook `sheet` entry. Treat both `hidden` and `veryHidden` as hidden worksheets; the latter is not normally exposed through the worksheet tab UI.

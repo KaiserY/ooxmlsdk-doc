@@ -2,6 +2,8 @@
 
 Formulas are stored in worksheet cells with `<f/>`. The cached value from the last calculation, when present, is stored in `<v/>`.
 
+Formulas are SpreadsheetML expressions. They can contain constants, arithmetic and comparison operators, cell references, named ranges, and function calls such as `SUM(C6:C10)`.
+
 ## Formula markup
 
 ```xml
@@ -12,6 +14,8 @@ Formulas are stored in worksheet cells with `<f/>`. The cached value from the la
 ```
 
 The formula text is not evaluated by `ooxmlsdk`. Spreadsheet applications may recalculate it when the workbook is opened. If you edit formula inputs or formula text, make sure cached values and calculation metadata are still appropriate for your use case.
+
+The generated schema type for `<f/>` is `CellFormula`. The cached `<v/>` result is optional; omitting it leaves recalculation to the spreadsheet application. Keeping an old cached value after changing a formula can display stale data in software that trusts the cache.
 
 ## Rust workflow
 

@@ -8,14 +8,20 @@ A SpreadsheetML file is an Open Packaging Convention package. The `.xlsx` file i
 |---|---|---|
 | Workbook | `<workbook/>` | `SpreadsheetDocument::workbook_part()` |
 | Worksheet | `<worksheet/>` | `WorkbookPart::worksheet_parts(&document)` |
+| Chartsheet | `<chartsheet/>` | chartsheet parts when present |
 | Shared strings | `<sst/>` | `WorkbookPart::shared_string_table_part(&document)` |
 | Styles | `<styleSheet/>` | `WorkbookPart::workbook_styles_part(&document)` |
 | Calculation chain | `<calcChain/>` | `WorkbookPart::calculation_chain_part(&document)` |
 | Table | `<table/>` | `WorksheetPart::table_definition_parts(&document)` |
 | Drawing | `<wsDr/>` | `WorksheetPart::drawings_part(&document)` |
 | Pivot table | `<pivotTableDefinition/>` | `WorksheetPart::pivot_table_parts(&document)` |
+| Pivot cache | `<pivotCacheDefinition/>` | workbook-level pivot cache parts when present |
+| Pivot cache records | `<pivotCacheRecords/>` | pivot cache record parts when present |
+| Conditional formatting | `<conditionalFormatting/>` | worksheet XML under the generated worksheet schema |
 
-The exact set of parts depends on the workbook. A small workbook can contain only package relationships, `xl/workbook.xml`, one or more worksheets, and content type declarations.
+The exact set of parts depends on the workbook. A small workbook can contain only package relationships, `xl/workbook.xml`, one worksheet, and content type declarations.
+
+The minimum workbook scenario has three spreadsheet-specific requirements: a single sheet entry, a workbook-local sheet ID, and a relationship ID that points from the workbook part to the worksheet part.
 
 ## Workbook and worksheet references
 
@@ -66,3 +72,5 @@ A worksheet stores rows and cells under `<sheetData/>`.
 ```
 
 Cells can store raw values, formulas, inline strings, or shared string indexes. The shared string table is a separate workbook-level part.
+
+A typical workbook can add many more parts, including chartsheets, drawings, tables, pivot tables, pivot caches, styles, and shared strings. Keep the workbook XML, relationships, and content type declarations in sync whenever adding or removing parts.

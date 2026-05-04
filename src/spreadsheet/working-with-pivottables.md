@@ -2,6 +2,8 @@
 
 PivotTables are represented by several coordinated parts. A worksheet can own one or more pivot table definition parts, while the workbook owns pivot cache definitions and those cache definitions can own cache records.
 
+PivotTables present aggregated views of source data. The visible PivotTable cells on the worksheet are display data; the reusable source field metadata and cached records live in the pivot cache parts.
+
 ## PivotTable package model
 
 | Part | Purpose |
@@ -12,6 +14,8 @@ PivotTables are represented by several coordinated parts. A worksheet can own on
 | Worksheet | Displayed PivotTable cells and relationship to the definition |
 
 The pivot table definition references a pivot cache. Multiple PivotTables can use the same cache.
+
+The pivot table definition describes which fields appear on the row axis, column axis, values area, and report filter area. The pivot cache definition describes all available source fields, including fields that a particular PivotTable is not currently using.
 
 ## PivotTable markup
 
@@ -34,3 +38,5 @@ Use the workbook and worksheet part graph to locate pivot-related parts. `Workbo
 ```
 
 This first-pass page is read-oriented. Creating or editing PivotTables requires coordinated cache, worksheet, relationship, and display cell updates, so writer code should be added only with full fixture coverage.
+
+In ooxmlsdk 0.6.0, the generated part graph includes `WorkbookPart::pivot_table_cache_definition_parts`, `WorksheetPart::pivot_table_parts`, `PivotTablePart::pivot_table_cache_definition_part`, and `PivotTableCacheDefinitionPart::pivot_table_cache_records_part`. The corresponding schema types include `PivotTableDefinition`, `PivotField`, `PivotCacheDefinition`, and `PivotCacheRecords`.
