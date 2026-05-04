@@ -1,264 +1,44 @@
 # Working with slide layouts
 
-This topic discusses the Open XML SDK for Office `DocumentFormat.OpenXml.Presentation.SlideLayout` class and how it relates to the Open XML File Format PresentationML schema.
+A slide layout is a template part that describes the placeholder and formatting structure a slide can inherit from a slide master. In PresentationML it is rooted at `<p:sldLayout/>`; in `ooxmlsdk` it is represented as a slide layout part reached through relationships.
 
-## Slide Layouts in PresentationML
+## Slide layout structure
 
-The [ISO/IEC 29500](https://www.iso.org/standard/71691.html) specification describes the Open XML PresentationML `<sldLayout/>` element used to represent slide layouts in a PresentationML document as follows:
-
-This element specifies an instance of a slide layout. The slide layout
-contains in essence a template slide design that can be applied to any
-existing slide. When applied to an existing slide all corresponding
-content should be mapped to the new slide layout.
-
-The `<sldLayout/>` element is the root element of the PresentationML
-Slide Layout part. For more information about the overall structure of
-the parts and elements that make up a PresentationML document, see
-[Structure of a PresentationML Document](structure-of-a-presentationml-document.md).
-
-The following table lists the child elements of the `<sldLayout/>`
-element used when working with slide layouts and the Open XML SDK
-classes that correspond to them.
-
-| **PresentationML Element** |    **Open XML SDK Class**           |
-|----------------------------|-------------------------------------|
-|       `<clrMapOvr/>`        |              `DocumentFormat.OpenXml.Presentation.ColorMapOverride`              |
-|          `<cSld/>`          |               `DocumentFormat.OpenXml.Presentation.CommonSlideData`               |
-|         `<extLst/>`         | `DocumentFormat.OpenXml.Presentation.ExtensionListWithModification` |
-|           `<hf/>`           |                  `DocumentFormat.OpenXml.Presentation.HeaderFooter`                  |
-|         `<timing/>`         |                        `DocumentFormat.OpenXml.Presentation.Timing`                        |
-|       `<transition/>`       |                    `DocumentFormat.OpenXml.Presentation.Transition`                    |
-
-The following table from the [ISO/IEC 29500](https://www.iso.org/standard/71691.html)
-specification describes the attributes of the `<sldLayout/>` element.
-
-|  **Attributes**  | **Description**   |
-| -----------------|-------------------|
-|  matchingName (Matching Name) | Specifies a name to be used in place of the name attribute within the cSld element. This is used for layout matching in response to layout changes and template applications.  <br/><br/>The possible values for this attribute are defined by the W3C XML Schema `string` datatype. |
-| preserve (Preserve Slide Layout) | Specifies whether the corresponding slide layout is deleted when all the slides that follow that layout are deleted. If this attribute is not specified then a value of `false` should be assumed by the generating application. This would mean that the slide would in fact be deleted if no slides within the presentation were related to it.<br/><br/>The possible values for this attribute are defined by the W3C XML Schema `boolean` datatype. |
-| showMasterPhAnim (Show Master Placeholder Animations) | Specifies whether or not to display animations on placeholders from the master slide.<br/><br/>The possible values for this attribute are defined by the W3C XML Schema `boolean` datatype. |
-| showMasterSp (Show Master Shapes) | Specifies if shapes on the master slide should be shown on slides or not.<br/><br/>The possible values for this attribute are defined by the W3C XML Schema `boolean` datatype. |
-| type (Slide Layout Type) |                                                                                                                                          Specifies the slide layout type that is used by this slide.<br/><br/>The possible values for this attribute are defined by the ST_SlideLayoutType simple type (§19.7.15). |
-| userDrawn (Is User Drawn) |  Specifies if the corresponding object has been drawn by the user and should thus not be deleted. This allows for the flagging of slides that contain user drawn data.<br/><br/>The possible values for this attribute are defined by the W3C XML Schema `boolean` datatype. |
-
-## The Open XML SDK SlideLayout Class
-
-The OXML SDK `SlideLayout` class represents
-the `<sldLayout/>` element defined in the Open XML File Format schema for
-PresentationML documents. Use the `SlideLayout` class to manipulate individual
-`<sldLayout/>` elements in a PresentationML document.
-
-Classes that represent child elements of the `<sldLayout/>` element and
-that are therefore commonly associated with the `SlideLayout` class are shown in the following
-list.
-
-### ColorMapOverride Class
-
-The `ColorMapOverride` class corresponds to
-the `<clrMapOvr/>` element. The following information from the [ISO/IEC 29500](https://www.iso.org/standard/71691.html)
-specification introduces the `<clrMapOvr/>` element:
-
-This element provides a mechanism with which to override the color
-schemes listed within the `<ClrMap/>` element. If the
-`<masterClrMapping/>` child element is present, the color scheme defined
-by the master is used. If the `<overrideClrMapping/>` child element is
-present, it defines a new color scheme specific to the parent notes
-slide, presentation slide, or slide layout.
-
-### CommonSlideData Class
-
-The `CommonSlideData` class corresponds to
-the `<cSld/>` element. The following information from the [ISO/IEC 29500](https://www.iso.org/standard/71691.html)
-specification introduces the `<cSld/>` element:
-
-This element specifies a container for the type of slide information
-that is relevant to all of the slide types. All slides share a common
-set of properties that is independent of the slide type; the description
-of these properties for any particular slide is stored within the
-slide's `<cSld/>` container. Slide data specific to the slide type
-indicated by the parent element is stored elsewhere.
-
-The actual data in `<cSld/>` describe only the particular parent slide;
-it is only the type of information stored that is common across all
-slides.
-
-### ExtensionListWithModification Class
-
-The `ExtensionListWithModification` class
-corresponds to the `<extLst/>`element. The following information from the
-[ISO/IEC 29500](https://www.iso.org/standard/71691.html)
-specification introduces the `<extLst/>` element:
-
-This element specifies the extension list with modification ability
-within which all future extensions of element type `<ext/>` are defined.
-The extension list along with corresponding future extensions is used to
-extend the storage capabilities of the PresentationML framework. This
-allows for various new kinds of data to be stored natively within the
-framework.
-
-> **Note**
-> Using this extLst element allows the generating application to store whether this extension property has been modified.
-
-### HeaderFooter Class
-
-The `HeaderFooter` class corresponds to the
-`<hf/>` element. The following information from the [ISO/IEC 29500](https://www.iso.org/standard/71691.html)
-specification introduces the `<hf/>` element:
-
-This element specifies the header and footer information for a slide.
-Headers and footers consist of placeholders for text that should be
-consistent across all slides and slide types, such as a date and time,
-slide numbering, and custom header and footer text.
-
-### Timing Class
-
-The `Timing` class corresponds to the
-`<timing/>` element. The following information from the [ISO/IEC 29500](https://www.iso.org/standard/71691.html)
-specification introduces the `<timing/>` element:
-
-This element specifies the timing information for handling all
-animations and timed events within the corresponding slide. This
-information is tracked via time nodes within the `<timing/>` element.
-More information on the specifics of these time nodes and how they are
-to be defined can be found within the Animation section of the
-PresentationML framework.
-
-### Transition Class
-
-The `Transition` class corresponds to the `<transition/>` element. The following information from the [ISO/IEC 29500](https://www.iso.org/standard/71691.html) specification introduces the `<transition/>` element:
-
-This element specifies the kind of slide transition that should be used to transition to the current slide from the previous slide. That is, the transition information is stored on the slide that appears after the transition is complete.
-
-## Working with the SlideLayout Class
-
-As shown in the Open XML SDK code sample that follows, every instance of
-the `SlideLayout` class is associated with an
-instance of the `DocumentFormat.OpenXml.Packaging.SlideLayoutPart` class, which represents a
-slide layout part, one of the required parts of a PresentationML
-presentation file package. Each `SlideLayout`
-class instance must also be associated with instances of the `DocumentFormat.OpenXml.Presentation.SlideMaster` and `DocumentFormat.OpenXml.Presentation.Slide` classes, which are in turn associated
-with similarly named required presentation parts, represented by the
-`DocumentFormat.OpenXml.Packaging.SlideMasterPart` and `DocumentFormat.OpenXml.Packaging.SlidePart` classes.
-
-The `SlideLayout` class, which represents the
-`<sldLayout/>` element, is therefore also associated with a series of
-other classes that represent the child elements of the `<sldLayout/>`
-element. Among these classes, as shown in the following code sample, are
-the `CommonSlideData` class, the `ColorMapOverride` class, the `DocumentFormat.OpenXml.Presentation.ShapeTree` class, and the `DocumentFormat.OpenXml.Presentation.Shape` class.
-
-## Open XML SDK Code Example
-
-The following method from the article [How to: Create a presentation document by providing a file name](how-to-create-a-presentation-document-by-providing-a-file-name.md) adds a new slide layout part to an existing presentation and creates an instance of an Open XML SDK `SlideLayout` class in the new slide layout part. The `SlideLayout` class constructor creates instances of the `CommonSlideData` class and the `ColorMapOverride` class. The `CommonSlideData` class constructor creates an instance of the `DocumentFormat.OpenXml.Presentation.ShapeTree` class, whose constructor in turn creates additional class instances: an instance of the `DocumentFormat.OpenXml.Presentation.NonVisualGroupShapeProperties` class, an instance of the `DocumentFormat.OpenXml.Presentation.GroupShapeProperties` class, and an instance of the `DocumentFormat.OpenXml.Presentation.Shape` class.
-
-The namespace represented by the letter *P* in the code is the `DocumentFormat.OpenXml.Presentation` namespace.
-
-### [C#](#tab/cs)
-```csharp
-static SlideLayoutPart CreateSlideLayoutPart(SlidePart slidePart1)
-{
-    SlideLayoutPart slideLayoutPart1 = slidePart1.AddNewPart<SlideLayoutPart>();
-    SlideLayout slideLayout = new SlideLayout(
-    new CommonSlideData(new ShapeTree(
-      new P.NonVisualGroupShapeProperties(
-      new P.NonVisualDrawingProperties() { Id = (UInt32Value)1U, Name = "" },
-      new P.NonVisualGroupShapeDrawingProperties(),
-      new ApplicationNonVisualDrawingProperties()),
-      new GroupShapeProperties(new TransformGroup()),
-      new P.Shape(
-      new P.NonVisualShapeProperties(
-        new P.NonVisualDrawingProperties() { Id = (UInt32Value)2U, Name = "" },
-        new P.NonVisualShapeDrawingProperties(new ShapeLocks() { NoGrouping = true }),
-        new ApplicationNonVisualDrawingProperties(new PlaceholderShape())),
-      new P.ShapeProperties(),
-      new P.TextBody(
-        new BodyProperties(),
-        new ListStyle(),
-        new Paragraph(new EndParagraphRunProperties()))))),
-    new ColorMapOverride(new MasterColorMapping()));
-    slideLayoutPart1.SlideLayout = slideLayout;
-    return slideLayoutPart1;
-}
-```
-
-### [Visual Basic](#tab/vb)
-```vb
-    Function CreateSlideLayoutPart(slidePart1 As SlidePart) As SlideLayoutPart
-        Dim slideLayoutPart1 As SlideLayoutPart = slidePart1.AddNewPart(Of SlideLayoutPart)("rId1")
-        Dim slideLayout As New SlideLayout(
-            New CommonSlideData(New ShapeTree(
-                New P.NonVisualGroupShapeProperties(
-                    New P.NonVisualDrawingProperties() With {.Id = CType(1UI, UInt32Value), .Name = ""},
-                    New P.NonVisualGroupShapeDrawingProperties(),
-                    New ApplicationNonVisualDrawingProperties()),
-                New GroupShapeProperties(New TransformGroup()),
-                New P.Shape(
-                    New P.NonVisualShapeProperties(
-                        New P.NonVisualDrawingProperties() With {.Id = CType(2UI, UInt32Value), .Name = ""},
-                        New P.NonVisualShapeDrawingProperties(New ShapeLocks() With {.NoGrouping = True}),
-                        New ApplicationNonVisualDrawingProperties(New PlaceholderShape())),
-                    New P.ShapeProperties(),
-                    New P.TextBody(
-                        New BodyProperties(),
-                        New ListStyle(),
-                        New Paragraph(New EndParagraphRunProperties()))))),
-            New ColorMapOverride(New MasterColorMapping()))
-        slideLayoutPart1.SlideLayout = slideLayout
-        Return slideLayoutPart1
-    End Function
-```
-***
-
-## Generated PresentationML
-
-When the Open XML SDK code is run, the following XML is written to the PresentationML document file referenced in the code.
+The layout root can contain common slide data, header/footer settings, timing, transition, color map override, and extension data.
 
 ```xml
-    <?xml version="1.0" encoding="utf-8"?>
-    <p:sldLayout xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
-      <p:cSld>
-        <p:spTree>
-          <p:nvGrpSpPr>
-            <p:cNvPr id="1"
-                     name="" />
-            <p:cNvGrpSpPr />
-            <p:nvPr />
-          </p:nvGrpSpPr>
-          <p:grpSpPr>
-            <a:xfrm xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" />
-          </p:grpSpPr>
-          <p:sp>
-            <p:nvSpPr>
-              <p:cNvPr id="2"
-                       name="" />
-              <p:cNvSpPr>
-                <a:spLocks noGrp="1"
-                           xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" />
-              </p:cNvSpPr>
-              <p:nvPr>
-                <p:ph />
-              </p:nvPr>
-            </p:nvSpPr>
-            <p:spPr />
-            <p:txBody>
-              <a:bodyPr xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" />
-              <a:lstStyle xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" />
-              <a:p xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
-                <a:endParaRPr />
-              </a:p>
-            </p:txBody>
-          </p:sp>
-        </p:spTree>
-      </p:cSld>
-      <p:clrMapOvr>
-        <a:masterClrMapping xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" />
-      </p:clrMapOvr>
-    </p:sldLayout>
+<p:sldLayout
+  xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+  type="title">
+  <p:cSld name="Title Slide">
+    <p:spTree>
+      <!-- placeholder and shape definitions -->
+    </p:spTree>
+  </p:cSld>
+</p:sldLayout>
 ```
 
-## See also
+Important attributes include:
 
-[About the Open XML SDK for Office](../about-the-open-xml-sdk.md)
+| Attribute | Meaning |
+|---|---|
+| `type` | Layout kind, such as title, blank, or title and content |
+| `matchingName` | Name used when matching layouts during template changes |
+| `preserve` | Whether the layout should be kept when no slide uses it |
+| `showMasterSp` | Whether master slide shapes are shown |
+| `showMasterPhAnim` | Whether master placeholder animations are shown |
+| `userDrawn` | Whether user-drawn data should be preserved |
 
-[How to: Create a Presentation by Providing a File Name](how-to-create-a-presentation-document-by-providing-a-file-name.md)
+## Navigating layouts in Rust
 
-[How to: Apply a theme to a presentation](how-to-apply-a-theme-to-a-presentation.md)
+A layout is normally reached from a slide part. This example opens a presentation, walks the slides, follows each slide layout relationship, and returns the layout XML.
+
+```rust
+{{#include ../../listings/presentation/src/lib.rs:get_slide_layout_xml}}
+```
+
+Layout parts can also relate back to a slide master and to dependent resources such as images, charts, diagrams, embedded packages, and theme overrides. Use the generated part accessors where available, because they resolve relationship ids without hard-coding package paths.
+
+## Editing notes
+
+Creating a valid layout from scratch requires a coordinated slide master, layout part, relationship entries, content type overrides, and placeholder XML. Until a chapter provides a tested construction example, prefer copying an existing layout and making small schema-aware edits.

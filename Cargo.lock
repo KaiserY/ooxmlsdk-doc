@@ -115,6 +115,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "ooxmlsdk-doc-presentation"
+version = "0.1.0"
+dependencies = [
+ "ooxmlsdk",
+ "zip",
+]
+
+[[package]]
 name = "proc-macro2"
 version = "1.0.106"
 source = "registry+https://github.com/rust-lang/crates.io-index"
