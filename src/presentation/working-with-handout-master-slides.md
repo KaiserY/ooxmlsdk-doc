@@ -25,6 +25,10 @@ Common elements:
 | `<p:hf/>` | Header and footer placeholders |
 | `<p:extLst/>` | Extension data |
 
+`p:clrMap` maps theme color names such as `bg1`, `tx1`, `accent1`, `hlink`, and `folHlink` to actual theme slots. `p:cSld` holds the common slide data for the handout master, including the shape tree and text bodies used by handout placeholders.
+
+If a handout master is created from scratch, the package also needs a handout master part relationship and any required theme or image relationships. The upstream sample creates common slide data, a shape tree, a title placeholder shape, and a color map.
+
 ## Rust workflow
 
 Open the package and get the presentation part. If the deck has a handout master, use `presentation_part.handout_master_part(&document)` and read the part data through the package.

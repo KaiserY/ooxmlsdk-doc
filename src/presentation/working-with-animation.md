@@ -2,6 +2,8 @@
 
 PresentationML stores animation data in slide timing markup. The core element is `<p:timing/>`, which contains timing nodes and behavior elements such as `<p:anim/>`.
 
+The animation model is loosely based on SMIL. Slide animations are time-based effects applied to slide objects or text. Slide transitions are related, but they are stored in `<p:transition/>` and occur before the slide's own animation timeline.
+
 ## Animation structure
 
 An animation behavior usually points at a target element on the slide and defines how a value changes over time.
@@ -26,6 +28,18 @@ Important animation-related elements include:
 | `<p:cBhvr/>` | Common behavior settings |
 | `<p:tgtEl/>` | Target element for the behavior |
 | `<p:tavLst/>` | Time-animated value list |
+
+Important `<p:anim/>` attributes include:
+
+| Attribute | Meaning |
+|---|---|
+| `by` | Relative offset from the starting value |
+| `from` | Starting value |
+| `to` | Ending value |
+| `calcmode` | Interpolation mode |
+| `valueType` | Type of the animated property value |
+
+In `ooxmlsdk`, the corresponding generated types live under `ooxmlsdk::schemas::p`, including `Animate`, `CommonBehavior`, `TimeAnimateValueList`, `Timing`, and `TargetElement`.
 
 ## Rust workflow
 

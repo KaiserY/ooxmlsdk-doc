@@ -26,6 +26,21 @@ The `<p:presentation/>` element stores presentation-wide properties and lists th
 
 The `r:id` values are relationship ids. `ooxmlsdk` resolves those relationships through the package model.
 
+Common children of `p:presentation` include:
+
+| Element | Meaning |
+|---|---|
+| `p:sldMasterIdLst` | Slide masters available in the presentation |
+| `p:sldIdLst` | Slides available in presentation order |
+| `p:notesMasterIdLst` | Notes masters |
+| `p:handoutMasterIdLst` | Handout masters |
+| `p:custShowLst` | Custom slide shows with their own slide ordering |
+| `p:sldSz` | Slide surface size |
+| `p:notesSz` | Notes and handout surface size |
+| `p:defaultTextStyle` | Default text styles |
+
+Slide size describes the presentation slide surface; notes size describes the surface used for notes slides and handouts. Both are separate from the physical package part size.
+
 ## Common Rust workflow
 
 Open the package, get the presentation part, then traverse child parts:

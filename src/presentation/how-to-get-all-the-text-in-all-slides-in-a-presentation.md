@@ -10,6 +10,8 @@ This example iterates over every slide part in a PresentationML package and extr
 
 The function returns one `Vec<String>` per slide. Each inner vector contains the text values found in `a:t` elements for that slide.
 
+The upstream sample presents the result as slide IDs paired with paragraph strings. This Rust listing keeps the output as nested vectors of extracted DrawingML text values.
+
 This keeps package traversal explicit:
 
 - Open the package with `PresentationDocument`.
@@ -19,7 +21,7 @@ This keeps package traversal explicit:
 
 ## Ordering
 
-This example uses the order returned by the package relationship model. For workflows that require exact presentation order, inspect the presentation root's slide ID list and resolve each relationship ID in that order.
+This example uses the order returned by the package relationship model. For workflows that require exact presentation order or slide IDs, inspect the presentation root's slide ID list and resolve each relationship ID in that order.
 
 ## Limitations
 

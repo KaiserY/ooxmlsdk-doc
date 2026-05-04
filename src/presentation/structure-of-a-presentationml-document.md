@@ -2,6 +2,10 @@
 
 A PresentationML file is an Open Packaging Convention package. The `.pptx` file is a ZIP container whose parts are connected by relationship items. `ooxmlsdk` exposes that graph through `PresentationDocument` and generated part accessors.
 
+A presentation is not stored as one large XML body. The presentation root, slide masters, slide layouts, slides, themes, notes, comments, media, and other resources live in separate parts. A separate XML part is created for each slide.
+
+The minimum document structure includes the presentation, slide master, slide layout, slide, and theme parts. Real decks can also include notes slides, handout masters, shapes, pictures, tables, animations, audio, video, and slide transitions.
+
 ## Package parts
 
 | Package part | Root element | `ooxmlsdk` access |

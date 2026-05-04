@@ -15,6 +15,19 @@ The presentation part orders slides through `<p:sldIdLst/>`:
 
 The `id` value is a presentation slide id. The `r:id` value resolves to a slide part relationship.
 
+## Insert workflow
+
+The upstream sample takes a file path, a zero-based insertion index, and a title string. It then:
+
+1. Creates a new `p:sld` root and common slide data.
+2. Adds a title shape and sets its text.
+3. Adds a body shape and sets its text or placeholder properties.
+4. Creates a new slide part.
+5. Inserts a new `p:sldId` entry at the requested index.
+6. Assigns the new slide root to the new slide part.
+
+In a complete package, the new slide should also have a slide layout relationship. Copying the layout relationship from a nearby slide is often safer than inventing one from scratch.
+
 ## Rust workflow
 
 Before inserting, inspect the current slide count and available layouts:

@@ -15,3 +15,5 @@ When `include_hidden` is `true`, the function returns the number of slide parts.
 ## Notes
 
 This example uses raw slide XML to check the `show` attribute. That keeps the example focused on package navigation and avoids loading every slide root. If you are already parsing slide roots for other edits, use the generated slide schema type instead.
+
+In PresentationML, a missing `show` value means the slide is visible. A value of `true` also means visible; hidden slides are represented by a false value, commonly serialized as `show="0"` or `show="false"`.

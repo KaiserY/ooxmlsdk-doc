@@ -23,6 +23,19 @@ The author list is a separate presentation-level part:
 </p:cmAuthorLst>
 ```
 
+Important `p:cm` children and attributes are:
+
+| Item | Meaning |
+|---|---|
+| `p:pos` | Position of the comment on the slide surface |
+| `p:text` | Unformatted comment text |
+| `p:extLst` | Extension data for future features |
+| `authorId` | ID of an entry in the comment author list |
+| `dt` | Last modified date and time |
+| `idx` | Comment index unique for that author |
+
+The position point is the upper-left point in left-to-right UI layouts and the upper-right point in right-to-left UI layouts. The display size is application-defined; comments do not appear during slide show playback.
+
 ## Rust workflow
 
 Use package relationships to find the relevant parts. Start with the presentation part for author data, and with each slide part for slide-specific comments.

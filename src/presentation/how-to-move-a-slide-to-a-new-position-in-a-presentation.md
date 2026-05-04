@@ -14,6 +14,8 @@ Slide order is controlled by the order of `<p:sldId/>` elements in the presentat
 
 Moving the third slide to the first position means moving the `rId3` entry before `rId1`.
 
+The upstream sample treats both `from` and `to` as zero-based indexes. It first counts slides, verifies both indexes are in range and different, removes the source `p:sldId` entry, and inserts that same entry at the target position. The slide part and relationship ID are preserved.
+
 ## Rust workflow
 
 Use the package model to inspect the current order and slide count:

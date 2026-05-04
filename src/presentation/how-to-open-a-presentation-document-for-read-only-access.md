@@ -4,6 +4,8 @@ Use `PresentationDocument` to open a `.pptx` package and inspect its parts. In `
 
 For read-only inspection, open the package and avoid saving it.
 
+`PresentationDocument::new` also accepts a `Read + Seek` reader, such as a `std::io::Cursor<Vec<u8>>` or a seekable file stream. Use that form when the package bytes come from storage other than a local path.
+
 ## Open and inspect slide parts
 
 ```rust
@@ -18,6 +20,8 @@ The example uses lazy package opening:
 - `slide_parts(&document)`
 
 Lazy opening is useful for inspection helpers because it lets you navigate the package model without parsing every root element up front.
+
+If a caller asks for a slide index that is out of range, return an error or an empty result deliberately. The upstream sample can throw an out-of-range exception; Rust examples should make that behavior explicit in their `Result` or `Option` shape.
 
 ## Presentation package structure
 

@@ -4,6 +4,8 @@ This example reads DrawingML text runs from one slide part in a PresentationML p
 
 Slide text is normally stored in `a:t` elements inside shapes, placeholders, tables, SmartArt, charts, and other DrawingML containers. This simple example reads the raw slide XML and extracts `a:t` element text.
 
+The upstream sample returns one string per paragraph by walking paragraphs and concatenating each paragraph's text runs. The Rust listing below is intentionally smaller: it returns the individual `a:t` text values in document order for the selected slide.
+
 ## Read slide text
 
 ```rust
@@ -23,3 +25,5 @@ If the index is out of range, it returns an empty vector.
 ## Limitations
 
 This helper is intentionally lightweight. It is suitable for simple extraction and documentation examples, but it is not a full text model for PowerPoint. Production code may need to handle tables, charts, notes, comments, ordering rules, and XML whitespace more carefully.
+
+When you need paragraph-level results, parse the slide root and group runs under each `a:p` paragraph instead of treating each `a:t` value as a paragraph.

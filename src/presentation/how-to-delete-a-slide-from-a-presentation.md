@@ -2,6 +2,8 @@
 
 Deleting a slide is a coordinated edit to `ppt/presentation.xml`, the presentation relationships, and possibly related notes, comments, media, and custom show data. Removing only the slide XML file leaves dangling relationships or slide ids.
 
+The upstream workflow first counts slides, then deletes a slide by zero-based index. Counting can be read-only; deletion must open the package for editing.
+
 ## What must change
 
 A slide is listed in `<p:sldIdLst/>`:
@@ -23,6 +25,10 @@ The relationship id points to a slide part:
 ```
 
 A safe deletion removes the slide id entry and the relationship, then checks whether related slide resources are still referenced.
+
+Custom shows need special handling. A custom show stores its own slide list by relationship ID, so every reference to the deleted slide relationship must be removed from every custom show before the slide part is deleted.
+
+More complex presentations can have additional references, such as outline view settings or extension data. Treat slide deletion as package graph cleanup, not just an XML list edit.
 
 ## Rust workflow
 

@@ -38,3 +38,5 @@ The matching relationship item stores the URL:
 ```
 
 The relationship is scoped to the slide part that owns the markup, so the same id can appear in a different part with a different target.
+
+When the relationship id is omitted, the hyperlink has no external relationship target. It can still point inside the same presentation through an anchor. When both an external relationship id and an anchor are present, the relationship target is the external link target for this lookup.
