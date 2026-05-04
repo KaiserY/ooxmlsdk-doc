@@ -1,48 +1,33 @@
 # Diagnostic IDs
 
-Diagnostic IDs are used to identify APIs or patterns that can raise compiler warnings or errors. This can be done via `System.ObsoleteAttribute.DiagnosticId` or `System.Diagnostics.CodeAnalysis.ExperimentalAttribute`. These can be suppressed at the consumer level for each diagnostic id.
+This page originally documented compiler diagnostic IDs used by the upstream SDK.
 
-## Experimental APIs
+`ooxmlsdk 0.6.0` does not currently define custom Rust diagnostic IDs for obsolete or experimental APIs. Rust users should rely on the normal Rust compiler diagnostics, Cargo feature errors, crate documentation, and `ooxmlsdk::common::SdkError` values returned at runtime.
 
-### OOXML0001
+## Common Rust diagnostics
 
-**Title**: IPackage related APIs are currently experimental
+Typical issues while using `ooxmlsdk` include:
 
-As of v3.0, a new abstraction layer was added in between `System.IO.Packaging` and `DocumentFormat.OpenXml.Packaging.OpenXmlPackage`. This is currently experimental, but can be used if needed. This will be stabilized in a future release, and may or may not require code changes.
+- Missing Cargo features, such as using `ooxmlsdk::parts` without enabling `parts`.
+- Calling an MCE process mode without enabling the `mce` feature.
+- Treating optional parts as always present instead of handling `Option`.
+- Ignoring `Result` from package open, parse, write, and save operations.
 
-## Suppress warnings
+## Runtime errors
 
-It's recommended that you use an available workaround whenever possible. However, if you cannot change your code, you can suppress warnings through a `#pragma` directive or a `<NoWarn>` project setting. If you must use the obsolete or experimental APIs and the `OOXMLXXXX` diagnostic does not surface as an error, you can suppress the warning in code or in your project file.
+Package operations return `Result` and may fail because:
 
-To suppress the warnings in code:
+- The input file is not a valid ZIP package.
+- `[Content_Types].xml` is missing or invalid.
+- A required relationship target is missing.
+- XML does not match the generated schema type being parsed.
+- Output writing fails.
 
-```csharp
-// Disable the warning.
-#pragma warning disable OOXML0001
+Handle these cases with normal Rust error propagation:
 
-// Code that uses obsolete or experimental API.
-//...
-
-// Re-enable the warning.
-#pragma warning restore OOXML0001
+```rust
+fn open_docx(path: &std::path::Path) -> Result<(), Box<dyn std::error::Error>> {
+  let _document = ooxmlsdk::parts::wordprocessing_document::WordprocessingDocument::new_from_file(path)?;
+  Ok(())
+}
 ```
-
-To suppress the warnings in a project file:
-
-```xml
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-   <TargetFramework>net6.0</TargetFramework>
-   <!-- NoWarn below suppresses SYSLIB0001 project-wide -->
-   <NoWarn>$(NoWarn);OOXML0001</NoWarn>
-   <!-- To suppress multiple warnings, you can use multiple NoWarn elements -->
-   <NoWarn>$(NoWarn);OOXML0001</NoWarn>
-   <NoWarn>$(NoWarn);OTHER_WARNING</NoWarn>
-   <!-- Alternatively, you can suppress multiple warnings by using a semicolon-delimited list -->
-   <NoWarn>$(NoWarn);OOXML0001;OTHER_WARNING</NoWarn>
-  </PropertyGroup>
-</Project>
-```
-
-> **Note**
-> Suppressing warnings in this way only disables the obsoletion warnings you specify. It doesn't disable any other warnings, including obsoletion warnings with different diagnostic IDs.
