@@ -2,6 +2,8 @@
 
 Application properties are stored in the extended file properties part, usually `docProps/app.xml`.
 
+These are package-level extended properties, not content in the main document part. They can describe application name, page count, word count, template, company, presentation format, and other producer-maintained metadata.
+
 ## Read application properties
 
 ```rust
@@ -21,3 +23,7 @@ The example reads a few common extended properties from the package-level part.
 ```
 
 Not every document contains every property. Treat this part as optional.
+
+Unlike core properties, individual extended properties can be absent when the producing application did not set them. Check the part and each requested element before reading text.
+
+In ooxmlsdk 0.6.0, `WordprocessingDocument::extended_file_properties_part()` locates the part when present.
