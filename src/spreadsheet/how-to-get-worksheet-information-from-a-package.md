@@ -1,143 +1,25 @@
-# Get worksheet information from an Open XML package
+# Get worksheet information from a package
 
-This topic shows how to use the classes in the Open XML SDK for Office to programmatically retrieve information from a worksheet in a Spreadsheet document.
+Worksheet data lives in worksheet parts related from the workbook part. Use the workbook part to traverse worksheets, then read each worksheet's XML through the package.
 
-## Basic structure of a spreadsheetML document
+## Read worksheet XML
 
-The basic document structure of a `SpreadsheetML` document consists of the `DocumentFormat.OpenXml.Spreadsheet.Sheets` and `DocumentFormat.OpenXml.Spreadsheet.Sheet` elements, which reference the worksheets in the workbook. A separate XML file is created for each worksheet. For example, the `SpreadsheetML` for a `DocumentFormat.OpenXml.Spreadsheet.Workbook` that has two worksheets name MySheet1 and MySheet2 is located in the Workbook.xml file and is shown in the following code example.
+```rust
+{{#include ../../listings/spreadsheet/src/lib.rs:get_worksheet_xml}}
+```
+
+This returns one XML string per worksheet part. From there you can inspect `<sheetData/>`, dimensions, merged cells, column definitions, page setup, tables, drawings, or other worksheet-level markup.
+
+## Worksheet markup
 
 ```xml
-    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?> 
-    <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
-        <sheets>
-            <sheet name="MySheet1" sheetId="1" r:id="rId1" /> 
-            <sheet name="MySheet2" sheetId="2" r:id="rId2" /> 
-        </sheets>
-    </workbook>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <sheetData>
+    <row r="1">
+      <c r="A1" t="s"><v>0</v></c>
+    </row>
+  </sheetData>
+</worksheet>
 ```
 
-The worksheet XML files contain one or more block level elements such as
-`DocumentFormat.OpenXml.Spreadsheet.SheetData` represents the cell table and contains
-one or more `DocumentFormat.OpenXml.Spreadsheet.Row` elements. A `row` contains one or more `DocumentFormat.OpenXml.Spreadsheet.Cell` elements. Each cell contains a `DocumentFormat.OpenXml.Spreadsheet.CellValue` element that represents the value
-of the cell. For example, the `SpreadsheetML`
-for the first worksheet in a workbook, that only has the value 100 in
-cell A1, is located in the Sheet1.xml file and is shown in the following
-code example.
-
-```xml
-    <?xml version="1.0" encoding="UTF-8" ?> 
-    <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-        <sheetData>
-            <row r="1">
-                <c r="A1">
-                    <v>100</v> 
-                </c>
-            </row>
-        </sheetData>
-    </worksheet>
-```
-
-Using the Open XML SDK, you can create document structure and
-content that uses strongly-typed classes that correspond to `SpreadsheetML` elements. You can find these
-classes in the `DocumentFormat.OpenXML.Spreadsheet` namespace. The
-following table lists the class names of the classes that correspond to
-the `workbook`, `sheets`, `sheet`, `worksheet`, and `sheetData` elements.
-
-| **SpreadsheetML Element** | **Open XML SDK Class** | **Description** |
-|:---|:---|:---|
-| `<workbook/>` | DocumentFormat.OpenXML.Spreadsheet.Workbook | The root element for the main document part. |
-| `<sheets/>` | DocumentFormat.OpenXML.Spreadsheet.Sheets | The container for the block level structures such as sheet, fileVersion, and others specified in the [ISO/IEC 29500](https://www.iso.org/standard/71691.html) specification. |
-| `<sheet/>` | DocumentFormat.OpenXml.Spreadsheet.Sheet | A sheet that points to a sheet definition file. |
-| `<worksheet/>` | DocumentFormat.OpenXML.Spreadsheet. Worksheet | A sheet definition file that contains the sheet data. |
-| `<sheetData/>` | DocumentFormat.OpenXML.Spreadsheet.SheetData | The cell table, grouped together by rows. |
-| `<row/>` | DocumentFormat.OpenXml.Spreadsheet.Row | A row in the cell table. |
-| `<c/>` | DocumentFormat.OpenXml.Spreadsheet.Cell | A cell in a row. |
-| `<v/>` | DocumentFormat.OpenXml.Spreadsheet.CellValue | The value of a cell. |
-
-## How the Sample Code Works
-
-After you have opened the file for read-only access, you instantiate the `Sheets` class.
-
-### [C#](#tab/cs-1)
-```csharp
-        Sheets? sheets = mySpreadsheet.WorkbookPart?.Workbook?.Sheets;
-```
-### [Visual Basic](#tab/vb-1)
-```vb
-            Dim sheets As Sheets = mySpreadsheet.WorkbookPart?.Workbook?.Sheets
-```
-***
-
-You then you iterate through the `Sheets` collection and display `DocumentFormat.OpenXml.OpenXmlElement` and the
-`DocumentFormat.OpenXml.OpenXmlAttribute` in each element.
-
-### [C#](#tab/cs-2)
-```csharp
-            foreach (OpenXmlElement sheet in sheets)
-            {
-                foreach (OpenXmlAttribute attr in sheet.GetAttributes())
-                {
-                    Console.WriteLine("{0}: {1}", attr.LocalName, attr.Value);
-                }
-            }
-```
-### [Visual Basic](#tab/vb-2)
-```vb
-                For Each sheet As OpenXmlElement In sheets
-                    For Each attr As OpenXmlAttribute In sheet.GetAttributes()
-                        Console.WriteLine("{0}: {1}", attr.LocalName, attr.Value)
-                    Next
-                Next
-```
-***
-
-By displaying the attribute information you get the name and ID for each worksheet in the spreadsheet file.
-
-## Sample code
-
-The following is the complete code sample in both C\# and Visual Basic.
-
-### [C#](#tab/cs)
-```csharp
-static void GetSheetInfo(string fileName)
-{
-    // Open file as read-only.
-    using (SpreadsheetDocument mySpreadsheet = SpreadsheetDocument.Open(fileName, false))
-    {
-        Sheets? sheets = mySpreadsheet.WorkbookPart?.Workbook?.Sheets;
-        if (sheets is not null)
-        {
-            // For each sheet, display the sheet information.
-            foreach (OpenXmlElement sheet in sheets)
-            {
-                foreach (OpenXmlAttribute attr in sheet.GetAttributes())
-                {
-                    Console.WriteLine("{0}: {1}", attr.LocalName, attr.Value);
-                }
-            }
-        }
-    }
-}
-```
-
-### [Visual Basic](#tab/vb)
-```vb
-    Sub GetSheetInfo(fileName As String)
-        ' Open file as read-only.
-        Using mySpreadsheet As SpreadsheetDocument = SpreadsheetDocument.Open(fileName, False)
-            Dim sheets As Sheets = mySpreadsheet.WorkbookPart?.Workbook?.Sheets
-            If sheets IsNot Nothing Then
-                ' For each sheet, display the sheet information.
-                For Each sheet As OpenXmlElement In sheets
-                    For Each attr As OpenXmlAttribute In sheet.GetAttributes()
-                        Console.WriteLine("{0}: {1}", attr.LocalName, attr.Value)
-                    Next
-                Next
-            End If
-        End Using
-    End Sub
-```
-
-## See also
-
-[Open XML SDK class library reference](https://learn.microsoft.com/office/open-xml/open-xml-sdk)
+The order returned by `worksheet_parts(&document)` follows workbook relationships. If you need sheet display names or hidden state, read the workbook `<sheets/>` list as well.

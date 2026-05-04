@@ -19,26 +19,7 @@ The `mce` feature also enables `parts`.
 
 ## Open settings
 
-MCE behavior is configured through `OpenSettings`:
-
-```rust
-use ooxmlsdk::parts::wordprocessing_document::WordprocessingDocument;
-use ooxmlsdk::sdk::{
-  FileFormatVersion, MarkupCompatibilityProcessMode, MarkupCompatibilityProcessSettings,
-  OpenSettings,
-};
-
-let settings = OpenSettings {
-  markup_compatibility_process_settings: MarkupCompatibilityProcessSettings {
-    process_mode: MarkupCompatibilityProcessMode::ProcessAllParts,
-    target_file_format_version: FileFormatVersion::Office2016,
-  },
-  ..Default::default()
-};
-
-let document = WordprocessingDocument::new_from_file_with_settings("input.docx", settings)?;
-# Ok::<(), Box<dyn std::error::Error>>(())
-```
+MCE behavior is configured through `OpenSettings`. The relevant types are `MarkupCompatibilityProcessSettings`, `MarkupCompatibilityProcessMode`, and `FileFormatVersion`.
 
 The available process modes are:
 

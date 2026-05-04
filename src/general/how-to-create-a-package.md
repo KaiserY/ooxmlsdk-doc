@@ -37,8 +37,6 @@ The minimum main document part for a word-processing package is a `w:document` r
 
 The corresponding generated Rust types live under:
 
-```rust
-ooxmlsdk::schemas::schemas_openxmlformats_org_wordprocessingml_2006_main
-```
+`ooxmlsdk::schemas::schemas_openxmlformats_org_wordprocessingml_2006_main`
 
 For more about WordprocessingML package structure, see [Structure of a WordprocessingML document](../word/structure-of-a-wordprocessingml-document.md).

@@ -1,209 +1,27 @@
 # Working with WordprocessingML tables
 
-This topic discusses the Open XML SDK `DocumentFormat.OpenXml.Wordprocessing.Table` class and how it relates to the Office Open XML File Formats WordprocessingML schema.
+Tables are stored in the main document XML as `<w:tbl/>`. Rows are `<w:tr/>`, cells are `<w:tc/>`, and cell content is usually paragraphs.
 
-## Tables in WordprocessingML
+## Table markup
 
-The following text from the [ISO/IEC 29500](https://www.iso.org/standard/71691.html) specification introduces the Open XML WordprocessingML table element.
-
-Another type of block-level content in WordprocessingML, A table is a set of paragraphs (and other block-level content) arranged in rows and columns.
-
-Tables in WordprocessingML are defined via the tbl element, which is analogous to the HTML `<table>` tag. The table element specifies the location of a table present in the document.
-
-A `tbl` element has two elements that define its properties: `tblPr`, which defines the set of table-wide properties (such as style and width), and `tblGrid`, which defines the grid layout of the table. A `tbl` element can also contain an arbitrary non-zero number of rows, where each row is specified with a `tr` element. Each `tr` element can contain an arbitrary non-zero number of cells, where each cell is specified with a `tc` element.
-
-&copy; ISO/IEC 29500: 2016
-
-The following table lists some of the most common Open XML SDK classes used when working with tables.
-
-| XML element  | Open XML SDK Class |
-| ------------- | ------------- |
-| Content Cell  | Content Cell  |
-|gridCol|GridColumn|
-|tblGrid|TableGrid|
-|tblPr|TableProperties|
-|tc|TableCell|
-|tr|TableRow|
-
-## Open XML SDK Table Class
-
-The Open XML SDK `DocumentFormat.OpenXml.Wordprocessing.Table` class represents the `<tbl>` element defined in the Open XML File Format schema for WordprocessingML documents as discussed above. Use a Table object to manipulate an individual table in a WordprocessingML document.
-
-## TableProperties Class
-
-The Open XML SDK `DocumentFormat.OpenXml.Wordprocessing.TableProperties` class represents the `<tblPr>` element defined in the Open XML File Format schema for WordprocessingML documents. The `<tblPr>` element defines table-wide properties for a table. Use a TableProperties object to set table-wide properties for a table in a WordprocessingML document.
-
-## TableGrid Class
-
-The Open XML SDK `DocumentFormat.OpenXml.Wordprocessing.TableGrid` class represents the `<tblGrid>` element defined in the Open XML File Format schema for WordprocessingML documents. In conjunction with grid column `<gridCol>` child elements, the `<tblGrid>` element defines the columns for a table and specifies the default width of table cells in the columns. Use a TableGrid object to define the columns in a table in a WordprocessingML document.
-
-## GridColumn Class
-
-The Open XML SDK `DocumentFormat.OpenXml.Wordprocessing.GridColumn` class represents the grid column `<gridCol>` element defined in the Open XML File Format schema for WordprocessingML documents. The `<gridCol>` element is a child element of the `<tblGrid>` element and defines a single column in a table in a WordprocessingML document. Use the GridColumn class to manipulate an individual column in a WordprocessingML document.
-
-## TableRow Class
-
-The Open XML SDK `DocumentFormat.OpenXml.Wordprocessing.TableRow` class represents the table row `<tr>` element defined in the Open XML File Format schema for WordprocessingML documents. The `<tr>` element defines a row in a table in a WordprocessingML document, analogous to the `<tr>` tag in HTML. A table row can also have formatting applied to it using a table row properties `<trPr>` element. The Open XML SDK `DocumentFormat.OpenXml.Wordprocessing.TableRowProperties` class represents the `<trPr>` element.
-
-## TableCell Class
-
-The Open XML SDK `DocumentFormat.OpenXml.Wordprocessing.TableCell` class represents the table cell `<tc>` element defined in the Open XML File Format schema for WordprocessingML documents. The `<tc>` element defines a cell in a table in a WordprocessingML document, analogous to the `<td>` tag in HTML. A table cell can also have formatting applied to it using a table cell properties `<tcPr>` element. The Open XML SDK `DocumentFormat.OpenXml.Wordprocessing.TableCellProperties` class represents the `<tcPr>` element.
-
-## Open XML SDK Code Example
-
-The following code inserts a table with 1 row and 3 columns into a document.
-
-### [C#](#tab/cs)
-```csharp
-static string InsertTableInDoc(string filepath)
-{
-    // Open a WordprocessingDocument for editing using the filepath.
-    using (WordprocessingDocument wordprocessingDocument = WordprocessingDocument.Open(filepath, true))
-    {
-        // Assign a reference to the existing document body or add one if necessary.
-
-        if (wordprocessingDocument.MainDocumentPart is null)
-        {
-            wordprocessingDocument.AddMainDocumentPart();
-        }
-
-        if (wordprocessingDocument.MainDocumentPart!.Document is null)
-        {
-            wordprocessingDocument.MainDocumentPart.Document = new Document();
-        }
-
-        if (wordprocessingDocument.MainDocumentPart.Document.Body is null)
-        {
-            wordprocessingDocument.MainDocumentPart.Document.Body = new Body();
-        }
-
-        Body body = wordprocessingDocument.MainDocumentPart.Document.Body;
-
-        // Create a table.
-        Table tbl = new Table();
-
-        // Set the style and width for the table.
-        TableProperties tableProp = new TableProperties();
-        TableStyle tableStyle = new TableStyle() { Val = "TableGrid" };
-
-        // Make the table width 100% of the page width.
-        TableWidth tableWidth = new TableWidth() { Width = "5000", Type = TableWidthUnitValues.Pct };
-
-        // Apply
-        tableProp.Append(tableStyle, tableWidth);
-        tbl.AppendChild(tableProp);
-
-        // Add 3 columns to the table.
-        TableGrid tg = new TableGrid(new GridColumn(), new GridColumn(), new GridColumn());
-        tbl.AppendChild(tg);
-
-        // Create 1 row to the table.
-        TableRow tr1 = new TableRow();
-
-        // Add a cell to each column in the row.
-        TableCell tc1 = new TableCell(new Paragraph(new Run(new Text("1"))));
-        TableCell tc2 = new TableCell(new Paragraph(new Run(new Text("2"))));
-        TableCell tc3 = new TableCell(new Paragraph(new Run(new Text("3"))));
-        tr1.Append(tc1, tc2, tc3);
-
-        // Add row to the table.
-        tbl.AppendChild(tr1);
-
-        // Add the table to the document
-        body.AppendChild(tbl);
-
-        return tbl.LocalName;
-    }
-}
-```
-
-### [Visual Basic](#tab/vb)
-```vb
-    Public Sub InsertTableInDoc(ByVal filepath As String)
-        ' Open a WordprocessingDocument for editing using the filepath.
-        Using wordprocessingDocument As WordprocessingDocument = WordprocessingDocument.Open(filepath, True)
-            ' Assign a reference to the existing document body.
-            Dim body As Body = wordprocessingDocument.MainDocumentPart.Document.Body
-
-            ' Create a table.
-            Dim tbl As New Table()
-
-            ' Set the style and width for the table.
-            Dim tableProp As New TableProperties()
-            Dim tableStyle As New TableStyle() With {.Val = "TableGrid"}
-
-            ' Make the table width 100% of the page width.
-            Dim tableWidth As New TableWidth() With {.Width = "5000", .Type = TableWidthUnitValues.Pct}
-
-            ' Apply
-            tableProp.Append(tableStyle, tableWidth)
-            tbl.AppendChild(tableProp)
-
-            ' Add 3 columns to the table.
-            Dim tg As New TableGrid(New GridColumn(), New GridColumn(), New GridColumn())
-            tbl.AppendChild(tg)
-
-            ' Create 1 row to the table.
-            Dim tr1 As New TableRow()
-
-            ' Add a cell to each column in the row.
-            Dim tc1 As New TableCell(New Paragraph(New Run(New Text("1"))))
-            Dim tc2 As New TableCell(New Paragraph(New Run(New Text("2"))))
-            Dim tc3 As New TableCell(New Paragraph(New Run(New Text("3"))))
-            tr1.Append(tc1, tc2, tc3)
-
-            ' Add row to the table.
-            tbl.AppendChild(tr1)
-
-            ' Add the table to the document
-            body.AppendChild(tbl)
-        End Using
-    End Sub
-```
-***
-
-When this code is run, the following XML is written to the WordprocessingML document specified in the preceding code.
-
-```XML
+```xml
 <w:tbl>
-  <w:tblPr>
-    <w:tblStyle w:val="TableGrid" />
-    <w:tblW w:w="5000" w:type="pct" />
-  </w:tblPr>
-  <w:tblGrid>
-    <w:gridCol />
-    <w:gridCol />
-    <w:gridCol />
-  </w:tblGrid>
   <w:tr>
     <w:tc>
-      <w:p>
-        <w:r>
-          <w:t>1</w:t>
-        </w:r>
-      </w:p>
-    </w:tc>
-    <w:tc>
-      <w:p>
-        <w:r>
-          <w:t>2</w:t>
-        </w:r>
-      </w:p>
-    </w:tc>
-    <w:tc>
-      <w:p>
-        <w:r>
-          <w:t>3</w:t>
-        </w:r>
-      </w:p>
+      <w:p><w:r><w:t>Cell text</w:t></w:r></w:p>
     </w:tc>
   </w:tr>
 </w:tbl>
 ```
 
-## See also
+Table properties, grid definitions, borders, widths, and styles are stored under table-level or cell-level property elements.
 
-- [About the Open XML SDK for Office](../about-the-open-xml-sdk.md)
-- [Structure of a WordprocessingML document](structure-of-a-wordprocessingml-document.md)
-- [Working with paragraphs](working-with-paragraphs.md)
-- [Working with runs](working-with-runs.md)
+## Rust workflow
+
+The document text helper includes text found inside table cells:
+
+```rust
+{{#include ../../listings/word/src/lib.rs:get_document_text}}
+```
+
+For table-specific edits, parse `<w:tbl/>`, `<w:tr/>`, and `<w:tc/>` boundaries so updates do not affect unrelated body paragraphs.

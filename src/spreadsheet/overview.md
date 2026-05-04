@@ -1,63 +1,29 @@
 # Spreadsheets
 
-This section provides how-to topics for working with spreadsheet documents using the Open XML SDK for Office.
+This section covers SpreadsheetML packages (`.xlsx`, `.xlsm`, `.xltx`) with `ooxmlsdk`.
+
+Spreadsheet packages are made of a workbook part, worksheet parts, optional shared strings, styles, tables, charts, pivot caches, drawings, and relationships between those parts. In `ooxmlsdk`, the entry point is usually `ooxmlsdk::parts::spreadsheet_document::SpreadsheetDocument`.
+
+Use the `parts` feature, enabled by default, to open and save packages. Examples in this section are backed by tested Rust code in `listings/spreadsheet`.
 
 ## In this section
 
 - [Structure of a SpreadsheetML document](structure-of-a-spreadsheetml-document.md)
-
-- [Add custom UI to a spreadsheet document](how-to-add-custom-ui-to-a-spreadsheet-document.md)
-
-- [Calculate the sum of a range of cells in a spreadsheet document](how-to-calculate-the-sum-of-a-range-of-cells-in-a-spreadsheet-document.md)
-
-- [Copy a Worksheet Using SAX (Simple API for XML)](how-to-copy-a-worksheet-with-sax.md) 
-
-- [Create a spreadsheet document by providing a file name](how-to-create-a-spreadsheet-document-by-providing-a-file-name.md)
-
-- [Delete text from a cell in a spreadsheet document](how-to-delete-text-from-a-cell-in-a-spreadsheet.md)
-
-- [Get a column heading in a spreadsheet document](how-to-get-a-column-heading-in-a-spreadsheet.md)
-
-- [Get worksheet information from an Open XML package](how-to-get-worksheet-information-from-a-package.md)
-
-- [Insert a chart into a spreadsheet document](how-to-insert-a-chart-into-a-spreadsheet.md)
-
-- [Insert a new worksheet into a spreadsheet document](how-to-insert-a-new-worksheet-into-a-spreadsheet.md)
-
-- [Insert text into a cell in a spreadsheet document](how-to-insert-text-into-a-cell-in-a-spreadsheet.md)
-
-- [Merge two adjacent cells in a spreadsheet document](how-to-merge-two-adjacent-cells-in-a-spreadsheet.md)
-
 - [Open a spreadsheet document for read-only access](how-to-open-a-spreadsheet-document-for-read-only-access.md)
-
-- [Open a spreadsheet document from a stream](how-to-open-a-spreadsheet-document-from-a-stream.md)
-
-- [Parse and read a large spreadsheet document](how-to-parse-and-read-a-large-spreadsheet.md)
-
-- [Retrieve a dictionary of all named ranges in a spreadsheet document](how-to-retrieve-a-dictionary-of-all-named-ranges-in-a-spreadsheet.md)
-
-- [Retrieve a list of the hidden rows or columns in a spreadsheet document](how-to-retrieve-a-list-of-the-hidden-rows-or-columns-in-a-spreadsheet.md)
-
-- [Retrieve a list of the hidden worksheets in a spreadsheet document](how-to-retrieve-a-list-of-the-hidden-worksheets-in-a-spreadsheet.md)
-
-- [Retrieve the values of cells in a spreadsheet document](how-to-retrieve-the-values-of-cells-in-a-spreadsheet.md)
-
 - [Retrieve a list of the worksheets in a spreadsheet document](how-to-retrieve-a-list-of-the-worksheets-in-a-spreadsheet.md)
-
-- [Working with the calculation chain](working-with-the-calculation-chain.md)
-
-- [Working with conditional formatting](working-with-conditional-formatting.md)
-
-- [Working with formulas](working-with-formulas.md)
-
-- [Working with PivotTables](working-with-pivottables.md)
-
-- [Working with the shared string table](working-with-the-shared-string-table.md)
-
+- [Get worksheet information from a package](how-to-get-worksheet-information-from-a-package.md)
+- [Retrieve the values of cells in a spreadsheet](how-to-retrieve-the-values-of-cells-in-a-spreadsheet.md)
 - [Working with sheets](working-with-sheets.md)
-
+- [Working with the shared string table](working-with-the-shared-string-table.md)
+- [Working with formulas](working-with-formulas.md)
+- [Working with the calculation chain](working-with-the-calculation-chain.md)
+- [Working with conditional formatting](working-with-conditional-formatting.md)
+- [Working with PivotTables](working-with-pivottables.md)
 - [Working with SpreadsheetML tables](working-with-tables.md)
+
+Writer-focused chapters are being ported only when the code has a fixture in `listings/` and passes `cargo test --workspace`.
 
 ## Related sections
 
-- [Getting started with the Open XML SDK for Office](../getting-started.md)
+- [Getting started](../getting-started.md)
+- [General package operations](../general/overview.md)

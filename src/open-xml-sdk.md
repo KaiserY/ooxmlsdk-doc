@@ -2,9 +2,9 @@
 
 `ooxmlsdk` is a Rust library for reading, writing, and round-tripping Office Open XML packages such as `.docx`, `.xlsx`, and `.pptx`.
 
-Office Open XML is standardized by [ECMA-376](https://www.ecma-international.org/publications-and-standards/standards/ecma-376/) and [ISO/IEC 29500](https://www.iso.org/standard/71691.html). The file formats are useful for Rust applications because they are ZIP packages containing XML parts and explicit relationships, rather than opaque application files.
+Office Open XML is standardized by [ECMA-376](https://www.ecma-international.org/publications-and-standards/standards/ecma-376/) and [ISO/IEC 29500](https://www.iso.org/standard/71691.html). The file formats are ZIP packages containing XML parts and explicit relationships, which makes them suitable for Rust tooling that needs deterministic package inspection or transformation.
 
-The crate provides generated schema types, serializers, deserializers, and strongly typed package parts. Its package model follows the same container concepts as the upstream SDK, but the API is Rust-native: methods return `Result`, package and part types are regular Rust structs, and optional crate functionality is controlled by Cargo features.
+The crate provides generated schema types, serializers, deserializers, and strongly typed package parts. Its API is Rust-native: methods return `Result`, package and part types are regular Rust structs, and optional functionality is controlled by Cargo features.
 
 ## Start here
 
@@ -25,6 +25,4 @@ The crate provides generated schema types, serializers, deserializers, and stron
 
 - [`ooxmlsdk` on crates.io](https://crates.io/crates/ooxmlsdk)
 - [`ooxmlsdk` API documentation](https://docs.rs/ooxmlsdk)
-- [Open XML SDK upstream metadata and behavior reference](https://github.com/dotnet/Open-XML-SDK)
-
-<sup>1</sup> Some chapters discuss concepts from ISO/IEC 29500. When text is still derived from the imported Microsoft documentation baseline, the notices in [Preface](preface.md) apply.
+- [`ooxmlsdk` source repository](https://github.com/KaiserY/ooxmlsdk)

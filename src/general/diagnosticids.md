@@ -23,11 +23,4 @@ Package operations return `Result` and may fail because:
 - XML does not match the generated schema type being parsed.
 - Output writing fails.
 
-Handle these cases with normal Rust error propagation:
-
-```rust
-fn open_docx(path: &std::path::Path) -> Result<(), Box<dyn std::error::Error>> {
-  let _document = ooxmlsdk::parts::wordprocessing_document::WordprocessingDocument::new_from_file(path)?;
-  Ok(())
-}
-```
+Handle these cases with normal Rust error propagation, usually by returning `Result` from your own helper and using `?` on package operations.

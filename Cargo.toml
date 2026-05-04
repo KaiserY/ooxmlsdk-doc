@@ -1,6 +1,11 @@
 [workspace]
 resolver = "3"
-members = ["listings/getting-started", "listings/presentation"]
+members = [
+  "listings/getting-started",
+  "listings/presentation",
+  "listings/spreadsheet",
+  "listings/word",
+]
 
 [workspace.package]
 edition = "2024"

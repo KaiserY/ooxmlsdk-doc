@@ -31,6 +31,25 @@ pub fn add_custom_xml_part(path: &Path, xml: &[u8]) -> Result<Vec<u8>, Box<dyn s
 }
 // ANCHOR_END: add_custom_xml_part
 
+// ANCHOR: add_custom_xml_part_with_id
+pub fn add_custom_xml_part_with_id(
+  path: &Path,
+  relationship_id: &str,
+  xml: &[u8],
+) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = WordprocessingDocument::new_from_file(path)?;
+  let main_part = document.main_document_part()?;
+  let custom_xml_part =
+    main_part.add_custom_xml_part_with_id(&mut document, "application/xml", relationship_id)?;
+
+  custom_xml_part.set_data(&mut document, xml.to_vec())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: add_custom_xml_part_with_id
+
 // ANCHOR: read_comments_part
 pub fn read_comments_part(path: &Path) -> Result<Option<String>, Box<dyn std::error::Error>> {
   let document = WordprocessingDocument::new_from_file(path)?;
@@ -139,6 +158,7 @@ pub fn search_and_replace_main_document(
 #[cfg(test)]
 mod tests {
   use super::*;
+  use ooxmlsdk::sdk::SdkPart;
   use std::io::Write;
   use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -169,6 +189,26 @@ mod tests {
     let main_part = reopened.main_document_part().expect("main document part");
 
     assert_eq!(main_part.custom_xml_parts(&reopened).count(), 1);
+  }
+
+  #[test]
+  fn adds_custom_xml_part_with_explicit_relationship_id() {
+    let fixture = write_minimal_docx_fixture();
+    let bytes = add_custom_xml_part_with_id(
+      &fixture,
+      "rIdCustomXml",
+      br#"<root><value>Hello</value></root>"#,
+    )
+    .expect("add part with relationship id");
+    let reopened =
+      WordprocessingDocument::new(Cursor::new(bytes)).expect("reopen with custom xml part");
+    let main_part = reopened.main_document_part().expect("main document part");
+    let custom_part = main_part
+      .custom_xml_parts(&reopened)
+      .next()
+      .expect("custom XML part");
+
+    assert_eq!(custom_part.relationship_id(), Some("rIdCustomXml"));
   }
 
   #[test]

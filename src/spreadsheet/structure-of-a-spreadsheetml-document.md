@@ -1,194 +1,68 @@
 # Structure of a SpreadsheetML document
 
-The document structure of a `SpreadsheetML`
-document consists of the `<workbook/>`
-element that contains `<sheets/>` and
-`<sheet/>` elements that reference the
-worksheets in the workbook. A separate XML file is created for each
-worksheet. These elements are the minimum elements required for a valid
-spreadsheet document. In addition, a spreadsheet document might contain
-`<table/>`, `<chartsheet/>`, `<pivotTableDefinition/>`, or other spreadsheet
-related elements.
+A SpreadsheetML file is an Open Packaging Convention package. The `.xlsx` file is a ZIP container whose parts are connected by relationship items. `ooxmlsdk` exposes that graph through `SpreadsheetDocument` and generated part accessors.
 
-> **Note**
-> Interested in developing solutions that extend the Office experience across multiple platforms? Check out the new [Office Add-ins model](https://learn.microsoft.com/office/dev/add-ins/overview/office-add-ins). Office Add-ins have a small footprint compared to VSTO Add-ins and solutions, and you can build them by using almost any web programming technology, such as HTML5, JavaScript, CSS3, and XML.
+## Package parts
 
---------------------------------------------------------------------------------
-## Important Spreadsheet Parts
+| Package part | Root element | `ooxmlsdk` access |
+|---|---|---|
+| Workbook | `<workbook/>` | `SpreadsheetDocument::workbook_part()` |
+| Worksheet | `<worksheet/>` | `WorkbookPart::worksheet_parts(&document)` |
+| Shared strings | `<sst/>` | `WorkbookPart::shared_string_table_part(&document)` |
+| Styles | `<styleSheet/>` | `WorkbookPart::workbook_styles_part(&document)` |
+| Calculation chain | `<calcChain/>` | `WorkbookPart::calculation_chain_part(&document)` |
+| Table | `<table/>` | `WorksheetPart::table_definition_parts(&document)` |
+| Drawing | `<wsDr/>` | `WorksheetPart::drawings_part(&document)` |
+| Pivot table | `<pivotTableDefinition/>` | `WorksheetPart::pivot_table_parts(&document)` |
 
-Using the Open XML SDK for Office, you can create document structure
-and content that uses strongly-typed classes that correspond to `SpreadsheetML` elements. You can find these
-classes in the `DocumentFormat.OpenXML.Spreadsheet` namespace. The
-following table lists the class names of the classes that correspond to
-some of the important spreadsheet elements.
+The exact set of parts depends on the workbook. A small workbook can contain only package relationships, `xl/workbook.xml`, one or more worksheets, and content type declarations.
 
-| Package Part| Top Level SpreadsheetML Element | Open XML SDK Class | Description|
-|:------------|:--------------------------------|:-----------------------|:-----------|
-| Workbook  |   `<workbook/>`  |  `DocumentFormat.OpenXml.Spreadsheet.Workbook`   |   The root element for the main document part.|
-| Worksheet  |  `<worksheet/>`     |    `DocumentFormat.OpenXml.Spreadsheet.Worksheet` | A type of sheet that represent a grid of cells that contains text, numbers, dates or formulas. For more information, see [Working with sheets](working-with-sheets.md).  |
-|Chart Sheet |  `<chartsheet/>`  | `DocumentFormat.OpenXml.Spreadsheet.Chartsheet` | A sheet that represents a chart that is stored as its own sheet. For more information, see [Working with sheets](working-with-sheets.md).  |
-| Table    |    `<table/>`    |     `DocumentFormat.OpenXml.Spreadsheet.Table`  | A logical construct that specifies that a range of data belongs to a single dataset. For more information, see [Working with SpreadsheetML tables](overview.md).  |
-|Pivot Table       | `<pivotTableDefinition/>` |  `DocumentFormat.OpenXml.Spreadsheet.PivotTableDefinition`  |  A logical construct that displays aggregated view of data in an understandable layout. For more information, see [Working with PivotTables](working-with-pivottables.md).  |
-|Pivot Cache  |   `<pivotCacheDefinition/>`  | `DocumentFormat.OpenXml.Spreadsheet.PivotCacheDefinition` |  A construct that defines the source of the data in the PivotTable. For more information, see [Working with PivotTables](working-with-pivottables.md).  |
-|Pivot Cache Records |  `<pivotCacheRecords/>`  |  `DocumentFormat.OpenXml.Spreadsheet.PivotCacheRecords`  |  A cache of the source data of the PivotTable. For more information, see [Working with PivotTables](working-with-pivottables.md). |
-| Calculation Chain | `<calcChain/>`  |  `DocumentFormat.OpenXml.Spreadsheet.CalculationChain` | A construct that specifies the order in which cells in the workbook were last calculated. For more information, see [Working with the calculation chain](working-with-the-calculation-chain.md).  |
-|Shared String Table |  `<sst/>`  |  `DocumentFormat.OpenXml.Spreadsheet.SharedStringTable`     | A construct that contains one occurrence of each unique string that occurs on all worksheets in a workbook. For more information, see [Working with the shared string table](working-with-the-shared-string-table.md). |
-|Conditional Formatting |   `<conditionalFormatting/>`   | `DocumentFormat.OpenXml.Spreadsheet.ConditionalFormatting`  |  A construct that defines a format applied to a cell or series of cells. For more information, see [Working with conditional formatting](working-with-conditional-formatting.md).   |
-| Formulas  |      `<f/>`    |  `DocumentFormat.OpenXml.Spreadsheet.CellFormula`  |  A construct that defines the formula text for a cell that contains a formula. For more information, see [Working with formulas](working-with-formulas.md).  |
+## Workbook and worksheet references
 
---------------------------------------------------------------------------------
-## Minimum Workbook Scenario
-
-The following text from the [Standard ECMA-376](https://www.ecma-international.org/publications-and-standards/standards/ecma-376/)
-introduces the minimum workbook scenario.
-
-The smallest possible (blank) workbook must contain the following:
-
-A single sheet
-
-A sheet ID
-
-A relationship Id that points to the location of the sheet definition
-
-&copy; Ecma International: December 2006.
-
-### Open XML SDK Code Example
-
-This code example uses the classes in the Open XML SDK to create a
-minimum, blank workbook.
-
-### [C#](#tab/cs)
-```csharp
-static void CreateSpreadsheetWorkbook(string filepath)
-{
-    // Create a spreadsheet document by supplying the filepath.
-    // By default, AutoSave = true, Editable = true, and Type = xlsx.
-    using (SpreadsheetDocument spreadsheetDocument = SpreadsheetDocument.Create(filepath, SpreadsheetDocumentType.Workbook))
-    {
-        // Add a WorkbookPart to the document.
-        WorkbookPart workbookPart = spreadsheetDocument.AddWorkbookPart();
-        workbookPart.Workbook = new Workbook();
-
-        // Add a WorksheetPart to the WorkbookPart.
-        WorksheetPart worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
-        worksheetPart.Worksheet = new Worksheet(new SheetData());
-
-        // Add Sheets to the Workbook.
-        Sheets sheets = workbookPart.Workbook.AppendChild(new Sheets());
-
-        // Append a new worksheet and associate it with the workbook.
-        Sheet sheet = new Sheet() { Id = workbookPart.GetIdOfPart(worksheetPart), SheetId = 1, Name = "mySheet" };
-        sheets.Append(sheet);
-    }
-}
-```
-
-### [Visual Basic](#tab/vb)
-```vb
-    Sub CreateSpreadsheetWorkbook(filepath As String)
-        ' Create a spreadsheet document by supplying the filepath.
-        ' By default, AutoSave = true, Editable = true, and Type = xlsx.
-        Using spreadsheetDocument As SpreadsheetDocument = SpreadsheetDocument.Create(filepath, SpreadsheetDocumentType.Workbook)
-            ' Add a WorkbookPart to the document.
-            Dim workbookPart As WorkbookPart = spreadsheetDocument.AddWorkbookPart()
-            workbookPart.Workbook = New Workbook()
-
-            ' Add a WorksheetPart to the WorkbookPart.
-            Dim worksheetPart As WorksheetPart = workbookPart.AddNewPart(Of WorksheetPart)()
-            worksheetPart.Worksheet = New Worksheet(New SheetData())
-
-            ' Add Sheets to the Workbook.
-            Dim sheets As Sheets = workbookPart.Workbook.AppendChild(Of Sheets)(New Sheets())
-
-            ' Append a new worksheet and associate it with the workbook.
-            Dim sheet As Sheet = New Sheet() With {
-                .Id = workbookPart.GetIdOfPart(worksheetPart),
-                .SheetId = 1,
-                .Name = "mySheet"
-            }
-            sheets.Append(sheet)
-        End Using
-    End Sub
-```
-
-### Generated SpreadsheetML
-
-After you run the Open XML SDK code to generate a minimum workbook,
-you can explore the contents of the .zip package to view the
-SpreadsheetML XML code. To view the .zip package, rename the extension
-on the minimum spreadsheet from **.xlsx** to
-**.zip**. Inside the .zip package, there are
-several parts that make up the minimum workbook.
-
-The following figure shows the structure under the **xl** folder of the .zip package for a minimum
-workbook.
-
-Figure 1. .zip folder structure
-
- ![Structure of a minimum workbook](../media/odc_oxml_xl_documentstructure_fig02.gif)
- 
-The **workbook.xml** file contains `<sheet/>` elements that reference the worksheets in
-the workbook. Each worksheet is associated to the workbook via a Sheet
-ID and a relationship ID. The `sheetID` is
-the ID used within the package to identify a sheet and must be unique
-within the workbook. The `id` is the
-relationship ID that identifies the sheet part definition associated
-with a sheet.
-
-The following XML code is the spreadsheetML that represents the workbook
-part of the spreadsheet document. This code is generated when you run
-the Open XML SDK code to create a minimum workbook.
+The workbook contains a `<sheets/>` collection. Each sheet entry has a workbook-local `sheetId` and a relationship id:
 
 ```xml
-    <?xml version="1.0" encoding="utf-8"?>
-    <x:workbook xmlns:x="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-        <x:sheets>
-            <x:sheet name="mySheet" sheetId="1" r:id="Rddc7711f116045e5" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" />
-        </x:sheets>
-    </x:workbook>
+<workbook
+  xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+  xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <sheets>
+    <sheet name="Summary" sheetId="1" r:id="rId1"/>
+    <sheet name="Hidden Data" sheetId="2" state="hidden" r:id="rId2"/>
+  </sheets>
+</workbook>
 ```
 
-The **workbook.xml.rels** file contains the
-`<Relationship/>` elements that define the
-relationships between the workbook and the worksheets it contains.
-
-The following XML code is the spreadsheetML that represents the
-relationship part of the spreadsheet document. This code is generated
-when you run the Open XML SDK to create a minimum workbook.
+The workbook relationship item resolves those ids to worksheet parts:
 
 ```xml
-    <?xml version="1.0" encoding="utf-8"?>
-    <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-        <Relationship Type="https://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="/xl/worksheets/sheet.xml" Id="Rddc7711f116045e5" />
-    </Relationships>
+<Relationship
+  Id="rId1"
+  Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"
+  Target="worksheets/sheet1.xml"/>
 ```
 
-The **sheet.xml** file contains the `<sheetData/>` element that represents the cell
-table. In this example, the workbook is blank, so the `<sheetData/>` element is empty. For more
-information about sheets, see [Working with sheets](working-with-sheets.md).
+## Reading the graph in Rust
 
-The following XML code is the spreadsheetML that represents the
-worksheet part of the spreadsheet document. This code is generated when
-you run the Open XML SDK to create a minimum workbook.
+Open the package, get the workbook part, and traverse typed child parts:
+
+```rust
+{{#include ../../listings/spreadsheet/src/lib.rs:open_spreadsheet_read_only}}
+```
+
+That pattern is the base for the other SpreadsheetML examples. Prefer generated accessors over hard-coded ZIP paths when navigating relationships.
+
+## Minimal worksheet
+
+A worksheet stores rows and cells under `<sheetData/>`.
 
 ```xml
-    <?xml version="1.0" encoding="utf-8"?>
-    <x:worksheet xmlns:x="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-        <x:sheetData />
-    </x:worksheet>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <sheetData>
+    <row r="1">
+      <c r="A1"><v>100</v></c>
+    </row>
+  </sheetData>
+</worksheet>
 ```
 
---------------------------------------------------------------------------------
-## Typical Workbook Scenario
-
-A typical workbook will not be a blank, minimum workbook. A typical
-workbook might contain numbers, text, charts, tables, and pivot tables.
-Each of these additional parts is contained within the .zip package of
-the spreadsheet document.
-
-The following figure shows most of the elements that you would find in a
-typical spreadsheet.
-
-Figure 2. Typical spreadsheet elements
-
- ![Structure of a SpreadsheetML document](../media/odc_oxml_xl_documentstructure_fig01.gif)
+Cells can store raw values, formulas, inline strings, or shared string indexes. The shared string table is a separate workbook-level part.
