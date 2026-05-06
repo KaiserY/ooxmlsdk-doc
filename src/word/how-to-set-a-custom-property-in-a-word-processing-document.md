@@ -26,4 +26,4 @@ This chapter does not yet publish a custom property writer. A final implementati
 
 When updating an existing property, replacing the whole property element is often simpler than mutating the old value because the value element name encodes the property type. After insertion or replacement, renumber `pid` values from 2 upward so they remain unique and stable for the saved part.
 
-In ooxmlsdk 0.6.0, the package model includes `CustomFilePropertiesPart`; writer coverage still needs a tested listing before this page publishes mutation code.
+In ooxmlsdk 0.6.1, the package model includes `CustomFilePropertiesPart`; writer coverage still needs a tested listing before this page publishes mutation code.

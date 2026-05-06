@@ -16,4 +16,4 @@ This chapter does not yet publish a deletion writer. A complete implementation s
 
 For each deleted comment id, remove all matching `commentRangeStart`, `commentRangeEnd`, and `commentReference` elements from the main document. If a package has comments in headers, footers, footnotes, or endnotes, apply the same marker cleanup in those stories too.
 
-In ooxmlsdk 0.6.0, generated schema types include `Comments`, `Comment`, `CommentRangeStart`, `CommentRangeEnd`, and `CommentReference`. `MainDocumentPart::wordprocessing_comments_part(&document)` locates the comments part when it exists.
+In ooxmlsdk 0.6.1, generated schema types include `Comments`, `Comment`, `CommentRangeStart`, `CommentRangeEnd`, and `CommentReference`. `MainDocumentPart::wordprocessing_comments_part(&document)` locates the comments part when it exists.

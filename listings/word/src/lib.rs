@@ -1,8 +1,9 @@
 // ANCHOR: open_word_read_only
+use std::io::Cursor;
 use std::path::Path;
 
 use ooxmlsdk::parts::wordprocessing_document::WordprocessingDocument;
-use ooxmlsdk::sdk::{OpenSettings, PackageOpenMode};
+use ooxmlsdk::sdk::{OpenSettings, PackageOpenMode, WordprocessingDocumentType};
 
 pub fn open_word_read_only(path: &Path) -> Result<usize, Box<dyn std::error::Error>> {
   let document = WordprocessingDocument::new_from_file_with_settings(path, lazy_settings())?;
@@ -12,6 +13,23 @@ pub fn open_word_read_only(path: &Path) -> Result<usize, Box<dyn std::error::Err
   Ok(xml.matches("<w:p").count())
 }
 // ANCHOR_END: open_word_read_only
+
+// ANCHOR: create_word_document
+pub fn create_word_document(text: &str) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = WordprocessingDocument::create(WordprocessingDocumentType::Document);
+  let main_part = document.add_main_document_part()?;
+  let escaped_text = escape_xml_text(text);
+  let xml = format!(
+    r#"<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>{escaped_text}</w:t></w:r></w:p></w:body></w:document>"#
+  );
+
+  main_part.set_data(&mut document, xml.into_bytes())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: create_word_document
 
 // ANCHOR: get_document_text
 pub fn get_document_text(path: &Path) -> Result<Vec<String>, Box<dyn std::error::Error>> {
@@ -68,6 +86,13 @@ fn lazy_settings() -> OpenSettings {
     open_mode: PackageOpenMode::Lazy,
     ..Default::default()
   }
+}
+
+fn escape_xml_text(value: &str) -> String {
+  value
+    .replace('&', "&amp;")
+    .replace('<', "&lt;")
+    .replace('>', "&gt;")
 }
 
 fn extract_text_values(xml: &str) -> Vec<String> {
@@ -164,6 +189,20 @@ mod tests {
     let count = open_word_read_only(&fixture).expect("open document");
 
     assert_eq!(count, 3);
+  }
+
+  #[test]
+  fn creates_word_document() {
+    let bytes = create_word_document("A&B").expect("create document");
+    let document =
+      WordprocessingDocument::new(std::io::Cursor::new(bytes)).expect("reopen document");
+    let main_part = document.main_document_part().expect("main document part");
+    let xml = main_part
+      .data_as_str(&document)
+      .expect("main document XML")
+      .expect("main document bytes");
+
+    assert!(xml.contains("<w:t>A&amp;B</w:t>"));
   }
 
   #[test]

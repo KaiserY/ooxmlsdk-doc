@@ -14,6 +14,6 @@ Open the package and inspect the main document part first:
 
 This chapter does not yet publish a converter. A correct implementation should remove VBA project relationships and parts, update content type overrides, change the main document content type when needed, and verify the saved `.docx`.
 
-In ooxmlsdk 0.6.0, `MainDocumentPart::vba_project_part(&document)` can locate a VBA project part when one is related from the main document part. A full converter also needs package mutation support for deleting that part, removing its relationship, changing content types, and saving to the new `.docx` path.
+In ooxmlsdk 0.6.1, `MainDocumentPart::vba_project_part(&document)` can locate a VBA project part when one is related from the main document part. A full converter also needs package mutation support for deleting that part, removing its relationship, changing content types, and saving to the new `.docx` path.
 
 If the source file has no VBA project part, the conversion can be a no-op at the package level, but code should still avoid overwriting an existing `.docx` output unexpectedly.

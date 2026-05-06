@@ -26,4 +26,4 @@ This chapter does not yet publish a font writer. A correct implementation should
 
 If the selected run has no run properties, create `rPr` and prepend it before run content. If it already has run properties, update or add only the `rFonts` child so other properties such as bold, italic, color, and style remain intact.
 
-In ooxmlsdk 0.6.0, generated schema types include `RunProperties`, `RunFonts`, `Run`, and `Text`.
+In ooxmlsdk 0.6.1, generated schema types include `RunProperties`, `RunFonts`, `Run`, and `Text`.

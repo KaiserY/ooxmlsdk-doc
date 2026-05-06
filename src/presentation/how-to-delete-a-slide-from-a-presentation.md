@@ -38,4 +38,4 @@ Use read-only traversal to identify the target slide before writing:
 {{#include ../../listings/presentation/src/lib.rs:count_slides}}
 ```
 
-This chapter does not yet include a tested deletion writer for `ooxmlsdk 0.6.0`. A final example should cover visible and hidden slides, custom shows, notes slides, comments, media, and relationship cleanup.
+This chapter does not yet include a tested deletion writer for `ooxmlsdk 0.6.1`. A final example should cover visible and hidden slides, custom shows, notes slides, comments, media, and relationship cleanup.

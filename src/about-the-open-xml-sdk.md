@@ -68,7 +68,7 @@ Most package operations return `Result<_, ooxmlsdk::common::SdkError>` or can be
 
 ## Feature model
 
-In `ooxmlsdk 0.6.0`, the default feature set enables `parts`, which is what most users need for `.docx`, `.xlsx`, and `.pptx` package work.
+In `ooxmlsdk 0.6.1`, the default feature set enables `parts`, which is what most users need for `.docx`, `.xlsx`, and `.pptx` package work.
 
 Additional features are opt-in:
 

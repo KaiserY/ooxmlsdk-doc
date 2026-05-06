@@ -43,7 +43,7 @@ Start by navigating to the target slide through the presentation part:
 {{#include ../../listings/presentation/src/lib.rs:get_slide_text}}
 ```
 
-`ooxmlsdk 0.6.0` has low-level package support for media data parts and reference relationships. This page does not yet publish a writer because video insertion needs a tested fixture that covers:
+`ooxmlsdk 0.6.1` has low-level package support for media data parts and reference relationships. This page does not yet publish a writer because video insertion needs a tested fixture that covers:
 
 - video media bytes and content type,
 - slide video reference relationship,

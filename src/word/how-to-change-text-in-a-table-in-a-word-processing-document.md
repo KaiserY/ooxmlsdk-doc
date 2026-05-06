@@ -41,4 +41,4 @@ This chapter does not yet publish a table text writer. Avoid broad string replac
 
 The upstream sample targets the first table, second row, and third cell, then replaces text in the first run of the first paragraph. A production Rust API should make table, row, and cell selection explicit, handle missing rows or cells as errors, and decide whether replacing text should preserve existing runs or rebuild the cell paragraph.
 
-In ooxmlsdk 0.6.0, generated schema types include `Table`, `TableProperties`, `TableGrid`, `GridColumn`, `TableRow`, `TableCell`, `TableCellProperties`, `Paragraph`, `Run`, and `Text`.
+In ooxmlsdk 0.6.1, generated schema types include `Table`, `TableProperties`, `TableGrid`, `GridColumn`, `TableRow`, `TableCell`, `TableCellProperties`, `Paragraph`, `Run`, and `Text`.

@@ -25,4 +25,4 @@ This chapter does not yet publish a remover. A complete implementation should re
 
 A document can contain multiple sections, and each section can have first-page, even-page, and default header/footer references. Remove all matching `HeaderReference` and `FooterReference` elements from every `SectionProperties` node.
 
-In ooxmlsdk 0.6.0, `MainDocumentPart::header_parts(&document)` and `MainDocumentPart::footer_parts(&document)` traverse the related parts. Generated schema types include `Header`, `Footer`, `HeaderReference`, `FooterReference`, and `SectionProperties`.
+In ooxmlsdk 0.6.1, `MainDocumentPart::header_parts(&document)` and `MainDocumentPart::footer_parts(&document)` traverse the related parts. Generated schema types include `Header`, `Footer`, `HeaderReference`, `FooterReference`, and `SectionProperties`.

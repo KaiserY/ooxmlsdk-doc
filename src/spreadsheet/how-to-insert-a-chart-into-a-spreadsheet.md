@@ -35,4 +35,4 @@ The upstream writer sample follows this package flow: verify that the target wor
 
 After the chart XML is written, the worksheet drawing positions the chart with a `TwoCellAnchor`. The anchor records the starting and ending row/column markers so Excel knows how the chart moves or resizes when worksheet rows and columns change. The graphic frame then references the chart relationship and gives the shape a name such as `Chart 1`.
 
-With ooxmlsdk 0.6.0 this page stays structural because the documentation set does not yet have a tested chart writer listing. When adding one, keep the writer idempotent or explicitly reject existing chart anchors; the upstream sample was intended to run only once.
+With ooxmlsdk 0.6.1 this page stays structural because the documentation set does not yet have a tested chart writer listing. When adding one, keep the writer idempotent or explicitly reject existing chart anchors; the upstream sample was intended to run only once.

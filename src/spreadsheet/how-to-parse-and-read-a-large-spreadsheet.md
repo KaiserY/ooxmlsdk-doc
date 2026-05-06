@@ -23,4 +23,4 @@ The listing returns XML strings because it is a compact documentation example. F
 
 A dedicated streaming example should be added under `listings/spreadsheet` before this page publishes final parser code.
 
-In ooxmlsdk 0.6.0, the package traversal is covered here, but the page deliberately does not present a full streaming worksheet parser until it is backed by a tested listing. When that listing is added, it should keep shared string resolution separate from row iteration so callers can choose between raw cell values and formatted text.
+In ooxmlsdk 0.6.1, the package traversal is covered here, but the page deliberately does not present a full streaming worksheet parser until it is backed by a tested listing. When that listing is added, it should keep shared string resolution separate from row iteration so callers can choose between raw cell values and formatted text.

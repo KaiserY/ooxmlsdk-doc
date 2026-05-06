@@ -2,6 +2,8 @@
 
 Creating a `.pptx` from scratch requires more than writing `ppt/presentation.xml`. A valid package also needs content type declarations, package relationships, presentation relationships, slide parts, and any required masters or layouts.
 
+In `ooxmlsdk 0.6.1`, create the package with `PresentationDocument::create(PresentationDocumentType::Presentation)`, add the presentation part, add slide parts from the presentation part, write the root XML, and save the package to the file or writer your application owns.
+
 ## Minimal package pieces
 
 A minimal presentation package includes:
@@ -12,10 +14,10 @@ A minimal presentation package includes:
 - `ppt/_rels/presentation.xml.rels`,
 - one or more `ppt/slides/slideN.xml` parts.
 
-The listing crate builds test fixtures with that structure so every documented reader works against a real `.pptx` package.
+This minimal writer creates a package with one slide relationship in memory:
 
 ```rust
-{{#include ../../listings/presentation/src/lib.rs:open_presentation_read_only}}
+{{#include ../../listings/presentation/src/lib.rs:create_presentation_document}}
 ```
 
 ## PresentationML roots
@@ -32,9 +34,9 @@ The main presentation part has a single `p:presentation` root. A usable presenta
 
 The `p:presentation` root usually references slide masters, notes masters, handout masters, and slides by relationship IDs. Slide IDs are stored in `p:sldIdLst`; the relationship ID points to the slide part, while the numeric slide ID is part of the presentation markup.
 
-## Creation status
+## Production checks
 
-`ooxmlsdk 0.6.0` can read, navigate, and save packages, and it exposes package-building primitives. This chapter does not yet publish a from-scratch presentation writer because a production example must validate:
+A production presentation writer should still validate:
 
 - package and presentation relationships,
 - content type overrides,
@@ -42,4 +44,4 @@ The `p:presentation` root usually references slide masters, notes masters, hando
 - slide master and layout references when required,
 - PowerPoint compatibility after save.
 
-For now, use existing presentations or test fixtures as the starting point for writer examples. When this chapter gets a final writer, the code must live in `listings/presentation` and be covered by `cargo test --workspace`.
+For template workflows, `PresentationDocument::create_from_template` opens a `.potx` or `.potm` as an editable presentation package. Use `document_type()` to inspect the current type and `change_document_type(...)` when converting the package content type deliberately.

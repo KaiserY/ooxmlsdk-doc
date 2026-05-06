@@ -24,4 +24,4 @@ Styles can define paragraph, character, table, and numbering behavior. A style i
 
 For full extraction, return the complete XML for `style_definitions_part` or `styles_with_effects_part` rather than only style ids. If the requested part is absent, return `None` or an empty result explicitly.
 
-In ooxmlsdk 0.6.0, `MainDocumentPart::style_definitions_part(&document)` locates `word/styles.xml`, and `MainDocumentPart::styles_with_effects_part(&document)` locates the styles-with-effects part when present. Generated schema types include `Styles` and `Style`.
+In ooxmlsdk 0.6.1, `MainDocumentPart::style_definitions_part(&document)` locates `word/styles.xml`, and `MainDocumentPart::styles_with_effects_part(&document)` locates the styles-with-effects part when present. Generated schema types include `Styles` and `Style`.

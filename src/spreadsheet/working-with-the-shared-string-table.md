@@ -34,4 +34,4 @@ Rich text shared strings can contain multiple runs under a single `<si/>`. A rea
 
 Simple shared strings store one `<t/>` child. Rich text shared strings store multiple `<r/>` runs, each with optional run properties (`<rPr/>`) and text (`<t/>`). Whitespace-sensitive text can use `xml:space="preserve"`.
 
-In ooxmlsdk 0.6.0, use `WorkbookPart::shared_string_table_part(&document)` to locate the part when present. The generated schema types include `SharedStringTable`, `SharedStringItem`, and `Text`. When writing shared strings, update the table and every referencing cell together; deleting or reordering items requires rewriting indexes in worksheet cells.
+In ooxmlsdk 0.6.1, use `WorkbookPart::shared_string_table_part(&document)` to locate the part when present. The generated schema types include `SharedStringTable`, `SharedStringItem`, and `Text`. When writing shared strings, update the table and every referencing cell together; deleting or reordering items requires rewriting indexes in worksheet cells.

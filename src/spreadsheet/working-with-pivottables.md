@@ -39,4 +39,4 @@ Use the workbook and worksheet part graph to locate pivot-related parts. `Workbo
 
 This first-pass page is read-oriented. Creating or editing PivotTables requires coordinated cache, worksheet, relationship, and display cell updates, so writer code should be added only with full fixture coverage.
 
-In ooxmlsdk 0.6.0, the generated part graph includes `WorkbookPart::pivot_table_cache_definition_parts`, `WorksheetPart::pivot_table_parts`, `PivotTablePart::pivot_table_cache_definition_part`, and `PivotTableCacheDefinitionPart::pivot_table_cache_records_part`. The corresponding schema types include `PivotTableDefinition`, `PivotField`, `PivotCacheDefinition`, and `PivotCacheRecords`.
+In ooxmlsdk 0.6.1, the generated part graph includes `WorkbookPart::pivot_table_cache_definition_parts`, `WorksheetPart::pivot_table_parts`, `PivotTablePart::pivot_table_cache_definition_part`, and `PivotTableCacheDefinitionPart::pivot_table_cache_records_part`. The corresponding schema types include `PivotTableDefinition`, `PivotField`, `PivotCacheDefinition`, and `PivotCacheRecords`.

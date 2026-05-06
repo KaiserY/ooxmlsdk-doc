@@ -1,8 +1,11 @@
 // ANCHOR: open_presentation_read_only
+use std::io::Cursor;
 use std::path::Path;
 
 use ooxmlsdk::parts::presentation_document::PresentationDocument;
-use ooxmlsdk::sdk::{OpenSettings, PackageOpenMode};
+use ooxmlsdk::parts::presentation_part::PresentationPart;
+use ooxmlsdk::parts::slide_part::SlidePart;
+use ooxmlsdk::sdk::{OpenSettings, PackageOpenMode, PresentationDocumentType};
 
 pub fn open_presentation_read_only(path: &Path) -> Result<usize, Box<dyn std::error::Error>> {
   let document = PresentationDocument::new_from_file_with_settings(path, lazy_settings())?;
@@ -11,6 +14,34 @@ pub fn open_presentation_read_only(path: &Path) -> Result<usize, Box<dyn std::er
   Ok(presentation_part.slide_parts(&document).count())
 }
 // ANCHOR_END: open_presentation_read_only
+
+// ANCHOR: create_presentation_document
+pub fn create_presentation_document() -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = PresentationDocument::create(PresentationDocumentType::Presentation);
+  let presentation_part = document.add_new_part_auto_id::<PresentationPart>()?;
+  let slide_part = presentation_part.add_new_part_auto_id::<_, SlidePart>(&mut document)?;
+  let slide_relationship_id = presentation_part
+    .get_id_of_part(&document, &slide_part)
+    .expect("slide relationship id")
+    .to_string();
+
+  presentation_part.set_data(
+    &mut document,
+    format!(
+      r#"<p:presentation xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><p:sldIdLst><p:sldId id="256" r:id="{slide_relationship_id}"/></p:sldIdLst><p:sldSz cx="12192000" cy="6858000"/><p:notesSz cx="6858000" cy="9144000"/></p:presentation>"#
+    )
+    .into_bytes(),
+  )?;
+  slide_part.set_data(
+    &mut document,
+    br#"<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:spTree/></p:cSld></p:sld>"#.to_vec(),
+  )?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: create_presentation_document
 
 // ANCHOR: count_slides
 pub fn count_slides(
@@ -192,6 +223,16 @@ mod tests {
     let count = open_presentation_read_only(&fixture).expect("open presentation");
 
     assert_eq!(count, 2);
+  }
+
+  #[test]
+  fn creates_presentation_document() {
+    let bytes = create_presentation_document().expect("create presentation");
+    let document =
+      PresentationDocument::new(std::io::Cursor::new(bytes)).expect("reopen presentation");
+    let presentation_part = document.presentation_part().expect("presentation part");
+
+    assert_eq!(presentation_part.slide_parts(&document).count(), 1);
   }
 
   #[test]

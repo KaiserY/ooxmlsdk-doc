@@ -4,7 +4,7 @@ use std::path::Path;
 
 use ooxmlsdk::parts::theme_part::ThemePart;
 use ooxmlsdk::parts::wordprocessing_document::WordprocessingDocument;
-use ooxmlsdk::sdk::{OpenSettings, PackageOpenMode};
+use ooxmlsdk::sdk::{OpenSettings, PackageOpenMode, is_encrypted_office_file_path};
 
 pub fn round_trip_word_document(path: &Path) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
   let document = WordprocessingDocument::new_from_file(path)?;
@@ -16,6 +16,12 @@ pub fn round_trip_word_document(path: &Path) -> Result<Vec<u8>, Box<dyn std::err
   Ok(buffer.into_inner())
 }
 // ANCHOR_END: full_example
+
+// ANCHOR: detect_encrypted_office_file
+pub fn detect_encrypted_office_file(path: &Path) -> Result<bool, Box<dyn std::error::Error>> {
+  Ok(is_encrypted_office_file_path(path)?)
+}
+// ANCHOR_END: detect_encrypted_office_file
 
 // ANCHOR: add_custom_xml_part
 pub fn add_custom_xml_part(path: &Path, xml: &[u8]) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
@@ -177,6 +183,21 @@ mod tests {
       .expect("main document root");
 
     assert!(document.body.is_some());
+  }
+
+  #[test]
+  fn detects_encrypted_office_file() {
+    let path = std::env::temp_dir().join(format!(
+      "ooxmlsdk-doc-encrypted-{}-{}.pptx",
+      std::process::id(),
+      FIXTURE_COUNTER.fetch_add(1, Ordering::Relaxed)
+    ));
+    let mut file = std::fs::File::create(&path).expect("create encrypted fixture");
+    file
+      .write_all(&[0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1])
+      .expect("write OLE signature");
+
+    assert!(detect_encrypted_office_file(&path).expect("detect encryption"));
   }
 
   #[test]

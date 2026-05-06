@@ -2,28 +2,43 @@
 
 Open XML files are ZIP-based packages. A valid package needs content types, relationships, and at least the required root part for the document category you are creating.
 
-In `ooxmlsdk 0.6.0`, package read/write APIs are available through types such as `WordprocessingDocument`, `SpreadsheetDocument`, and `PresentationDocument`. The crate can add parts and save packages, but it does not currently expose a high-level convenience constructor equivalent to "create a blank `.docx` from a path".
+In `ooxmlsdk 0.6.1`, package read/write APIs are available through types such as `WordprocessingDocument`, `SpreadsheetDocument`, and `PresentationDocument`. Use each document type's `create(...)` constructor to start a new package, add the required main part and child parts, then save to the file or writer your application owns.
 
-## Current Rust workflow
+## Rust workflow
 
-For now, the recommended documented workflow is:
+The recommended documented workflow is:
 
-1. Start from an existing valid package or template file.
-2. Open it with the appropriate package type.
-3. Modify parts and root elements through `ooxmlsdk`.
-4. Save the package to a writer or file.
+1. Pick the package family and document type.
+2. Create the package with `WordprocessingDocument::create`, `SpreadsheetDocument::create`, or `PresentationDocument::create`.
+3. Add the required main part and any child parts.
+4. Set part bytes or generated root elements.
+5. Save the package to a writer or file.
 
-The getting-started example demonstrates the open, inspect, and save path using `WordprocessingDocument`.
+The domain-specific create chapters show minimal package writers:
+
+- [Create a word processing document by providing a file name](../word/how-to-create-a-word-processing-document-by-providing-a-file-name.md)
+- [Create a spreadsheet document by providing a file name](../spreadsheet/how-to-create-a-spreadsheet-document-by-providing-a-file-name.md)
+- [Create a presentation document by providing a file name](../presentation/how-to-create-a-presentation-document-by-providing-a-file-name.md)
 
 ```rust
 {{#include ../../listings/getting-started/src/lib.rs:full_example}}
 ```
 
-## Creating from scratch
+## Document type and extension
 
-Creating a package from scratch is possible at the file-format level, but the initial OPC seed package must contain valid `[Content_Types].xml` and relationship parts before `ooxmlsdk` can open it as a package.
+The document type controls the content type written for the main part. Keep it aligned with the extension you persist:
 
-Until a higher-level creation helper is available in the crate, prefer using a template package for documentation examples. This keeps examples focused on `ooxmlsdk` APIs instead of teaching raw ZIP and OPC bootstrapping.
+| Family | Normal | Template | Macro-enabled |
+|---|---|---|---|
+| WordprocessingML | `.docx` with `WordprocessingDocumentType::Document` | `.dotx` with `Template` | `.docm` / `.dotm` with macro-enabled variants |
+| SpreadsheetML | `.xlsx` with `SpreadsheetDocumentType::Workbook` | `.xltx` with `Template` | `.xlsm`, `.xltm`, or `.xlam` with macro-enabled variants |
+| PresentationML | `.pptx` with `PresentationDocumentType::Presentation` | `.potx` with `Template` | `.pptm`, `.potm`, `.ppsm`, or `.ppam` with macro-enabled variants |
+
+Office applications can reject a package whose extension does not match its main part content type.
+
+## Templates
+
+Use `create_from_template` when a `.dotx`, `.xltx`, or `.potx` should become an editable regular document package. The method opens the template, changes the package document type to the default regular type for that family, and preserves the package content for further mutation and saving.
 
 ## WordprocessingML structure
 

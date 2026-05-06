@@ -36,7 +36,7 @@ Before inserting, inspect the current slide count and available layouts:
 {{#include ../../listings/presentation/src/lib.rs:count_slides}}
 ```
 
-`ooxmlsdk 0.6.0` exposes the package graph and generated part types, but this chapter does not yet publish an insertion writer. A tested example must verify:
+`ooxmlsdk 0.6.1` exposes the package graph and generated part types, but this chapter does not yet publish an insertion writer. A tested example must verify:
 
 - new slide part creation,
 - relationship id allocation,

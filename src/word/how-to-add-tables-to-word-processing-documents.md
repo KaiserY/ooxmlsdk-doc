@@ -27,7 +27,7 @@ The caller typically supplies a rectangular collection of strings. A writer turn
 </w:tbl>
 ```
 
-In ooxmlsdk 0.6.0, generated schema types include `Table`, `TableProperties`, `TableBorders`, `TableRow`, `TableCell`, `TableCellProperties`, `TableCellWidth`, `Paragraph`, `Run`, and `Text`.
+In ooxmlsdk 0.6.1, generated schema types include `Table`, `TableProperties`, `TableBorders`, `TableRow`, `TableCell`, `TableCellProperties`, `TableCellWidth`, `Paragraph`, `Run`, and `Text`.
 
 ## Rust workflow
 

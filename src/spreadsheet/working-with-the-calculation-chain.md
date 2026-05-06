@@ -20,7 +20,7 @@ The generated ooxmlsdk schema types include `CalculationChain` for `<calcChain/>
 
 ## Rust workflow
 
-Start from the workbook part. `ooxmlsdk 0.6.0` exposes `WorkbookPart::calculation_chain_part(&document)` when the package contains one.
+Start from the workbook part. `ooxmlsdk 0.6.1` exposes `WorkbookPart::calculation_chain_part(&document)` when the package contains one.
 
 ```rust
 {{#include ../../listings/spreadsheet/src/lib.rs:open_spreadsheet_read_only}}

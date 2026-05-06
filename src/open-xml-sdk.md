@@ -12,12 +12,7 @@ The crate provides generated schema types, serializers, deserializers, and stron
 
 - [Getting started](getting-started.md)
 - [About ooxmlsdk](about-the-open-xml-sdk.md)
-- [What's new in ooxmlsdk](what-s-new-in-the-open-xml-sdk.md)
 - [Design considerations](open-xml-sdk-design-considerations.md)
-
-## Migrating
-
-- [Migration notes](migration/migrate-v2-to-v3.md)
 
 ## Working with packages
 

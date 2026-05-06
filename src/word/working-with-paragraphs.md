@@ -29,4 +29,4 @@ Use the main document part to read paragraph text:
 
 If you need paragraph boundaries or properties, parse the main document XML and inspect `<w:p/>` nodes instead of flattening all text.
 
-In ooxmlsdk 0.6.0, generated schema types include `Paragraph`, `ParagraphProperties`, `Run`, `Text`, `Justification`, `ParagraphBorders`, `Indentation`, `SpacingBetweenLines`, and `Shading`.
+In ooxmlsdk 0.6.1, generated schema types include `Paragraph`, `ParagraphProperties`, `Run`, `Text`, `Justification`, `ParagraphBorders`, `Indentation`, `SpacingBetweenLines`, and `Shading`.

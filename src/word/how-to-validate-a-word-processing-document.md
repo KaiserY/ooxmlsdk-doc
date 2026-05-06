@@ -16,4 +16,4 @@ Schema-level validation is broader than this first-pass chapter. A final validat
 
 Opening the package and reading the main document part is only a basic package check. Schema validation should report each error with location, part, node path or element name, and a readable message. Do not mutate a document just to test validation unless the fixture is disposable; a corrupted file may fail on later opens.
 
-ooxmlsdk 0.6.0 currently covers typed package traversal and XML parsing for these docs, but this page does not publish a full schema validator listing yet.
+ooxmlsdk 0.6.1 currently covers typed package traversal and XML parsing for these docs, but this page does not publish a full schema validator listing yet.

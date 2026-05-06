@@ -49,4 +49,4 @@ Rows are stored as `<row/>` elements and cells as `<c/>` elements. Cell referenc
 
 The smallest valid blank worksheet is a `worksheet` root with an empty `sheetData` child. Optional sheet properties can appear before `sheetData`; optional supporting features such as protection, filters, drawings, and table references can appear after it.
 
-In ooxmlsdk 0.6.0, generated schema types include `Worksheet`, `SheetData`, `Row`, `Cell`, `CellValue`, `Chartsheet`, and `Drawing`. Prefer typed part accessors such as `WorkbookPart::worksheet_parts(&document)` and `WorkbookPart::chartsheet_parts(&document)` when traversing package structure.
+In ooxmlsdk 0.6.1, generated schema types include `Worksheet`, `SheetData`, `Row`, `Cell`, `CellValue`, `Chartsheet`, and `Drawing`. Prefer typed part accessors such as `WorkbookPart::worksheet_parts(&document)` and `WorkbookPart::chartsheet_parts(&document)` when traversing package structure.

@@ -44,7 +44,7 @@ Use package relationships to find the relevant parts. Start with the presentatio
 {{#include ../../listings/presentation/src/lib.rs:open_presentation_read_only}}
 ```
 
-`ooxmlsdk 0.6.0` exposes the package and part graph, but this chapter does not yet include a tested comment writer. Adding or replying to comments must coordinate comment ids, author ids, slide relationships, and in newer PowerPoint files, modern comment parts. Keep writer examples out of the docs until a fixture covers the whole graph.
+`ooxmlsdk 0.6.1` exposes the package and part graph, but this chapter does not yet include a tested comment writer. Adding or replying to comments must coordinate comment ids, author ids, slide relationships, and in newer PowerPoint files, modern comment parts. Keep writer examples out of the docs until a fixture covers the whole graph.
 
 ## Practical guidance
 

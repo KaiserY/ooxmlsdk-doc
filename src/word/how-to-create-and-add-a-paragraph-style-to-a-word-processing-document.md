@@ -35,4 +35,4 @@ Use the style extraction helper to inspect existing style ids:
 
 This chapter does not yet publish a paragraph style writer. A safe implementation must preserve existing styles and update relationships and content types if the styles part is absent.
 
-In ooxmlsdk 0.6.0, generated schema types include `Styles`, `Style`, `Aliases`, `StyleName`, `BasedOn`, `NextParagraphStyle`, `LinkedStyle`, `PrimaryStyle`, `StyleParagraphProperties`, `StyleRunProperties`, and `ParagraphStyleId`.
+In ooxmlsdk 0.6.1, generated schema types include `Styles`, `Style`, `Aliases`, `StyleName`, `BasedOn`, `NextParagraphStyle`, `LinkedStyle`, `PrimaryStyle`, `StyleParagraphProperties`, `StyleRunProperties`, and `ParagraphStyleId`.

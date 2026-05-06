@@ -1,5 +1,7 @@
 # Getting started with ooxmlsdk
 
+This book targets `ooxmlsdk 0.6.1`, the latest version available in the local upstream checkout used for this documentation update.
+
 `ooxmlsdk` is a Rust library for reading, writing, and round-tripping Office Open XML documents such as `.docx`, `.xlsx`, and `.pptx`. Its package API exposes generated Rust schema types, serializers, deserializers, and strongly typed package parts.
 
 ## Rust package
@@ -8,7 +10,7 @@ Add `ooxmlsdk` to your Cargo project:
 
 ```toml
 [dependencies]
-ooxmlsdk = "0.6.0"
+ooxmlsdk = "0.6.1"
 ```
 
 The default feature set enables the `parts` APIs used for `.docx`, `.xlsx`, and `.pptx` packages.
@@ -19,6 +21,12 @@ For example, this function opens a WordprocessingML package, confirms that the m
 
 ```rust
 {{#include ../listings/getting-started/src/lib.rs:full_example}}
+```
+
+Use `is_encrypted_office_file_path` before opening a file when your tool needs to report encrypted packages separately from malformed or unsupported packages:
+
+```rust
+{{#include ../listings/getting-started/src/lib.rs:detect_encrypted_office_file}}
 ```
 
 ## Crate modules
@@ -37,7 +45,7 @@ Feature-gated modules are:
 
 ## Feature flags
 
-`ooxmlsdk` 0.6.0 has a small public feature surface:
+`ooxmlsdk` 0.6.1 has a small public feature surface:
 
 - `default`: enables `parts`; this is the recommended configuration for most users.
 - `parts`: enables package-level OOXML read/write APIs such as `WordprocessingDocument`, `SpreadsheetDocument`, and `PresentationDocument`.
@@ -49,21 +57,21 @@ For package APIs without extra feature behavior:
 
 ```toml
 [dependencies]
-ooxmlsdk = { version = "0.6.0", default-features = false, features = ["parts"] }
+ooxmlsdk = { version = "0.6.1", default-features = false, features = ["parts"] }
 ```
 
 For Flat OPC helpers:
 
 ```toml
 [dependencies]
-ooxmlsdk = { version = "0.6.0", default-features = false, features = ["flat-opc"] }
+ooxmlsdk = { version = "0.6.1", default-features = false, features = ["flat-opc"] }
 ```
 
 For MCE processing during package open and root loading:
 
 ```toml
 [dependencies]
-ooxmlsdk = { version = "0.6.0", default-features = false, features = ["mce"] }
+ooxmlsdk = { version = "0.6.1", default-features = false, features = ["mce"] }
 ```
 
 ## Package API
@@ -74,7 +82,14 @@ With `parts` enabled, use the package type that matches the document family:
 - `SpreadsheetDocument` for `.xlsx` and related SpreadsheetML packages.
 - `PresentationDocument` for `.pptx` and related PresentationML packages.
 
-Common operations include opening packages with `new`, `new_with_settings`, `new_from_file`, or `new_from_file_with_settings`; saving with `save`; inspecting relationships and parts; and accessing well-known child parts through typed methods such as `main_document_part`, `workbook_part`, `presentation_part`, and `worksheet_parts`.
+Common operations include creating packages with `create`, opening packages with `new`, `new_with_settings`, `new_from_file`, or `new_from_file_with_settings`; creating editable packages from templates with `create_from_template`; checking and changing the package document type with `document_type` and `change_document_type`; detecting encrypted Office files with `is_encrypted_office_file` or `is_encrypted_office_file_path`; saving with `save`; inspecting relationships and parts; and accessing well-known child parts through typed methods such as `main_document_part`, `workbook_part`, `presentation_part`, and `worksheet_parts`.
+
+The package types also expose convenience output helpers:
+
+- `save` writes the current package to any `Write + Seek` target.
+- `copy_to` writes the package without consuming it.
+- `to_package_bytes` returns an in-memory `Vec<u8>`.
+- `save_as_file` writes directly to a path.
 
 ## Version coverage
 

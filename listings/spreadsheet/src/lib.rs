@@ -1,9 +1,12 @@
 // ANCHOR: open_spreadsheet_read_only
 use std::collections::BTreeMap;
+use std::io::Cursor;
 use std::path::Path;
 
 use ooxmlsdk::parts::spreadsheet_document::SpreadsheetDocument;
-use ooxmlsdk::sdk::{OpenSettings, PackageOpenMode};
+use ooxmlsdk::parts::workbook_part::WorkbookPart;
+use ooxmlsdk::parts::worksheet_part::WorksheetPart;
+use ooxmlsdk::sdk::{OpenSettings, PackageOpenMode, SpreadsheetDocumentType};
 
 pub fn open_spreadsheet_read_only(path: &Path) -> Result<usize, Box<dyn std::error::Error>> {
   let document = SpreadsheetDocument::new_from_file_with_settings(path, lazy_settings())?;
@@ -12,6 +15,34 @@ pub fn open_spreadsheet_read_only(path: &Path) -> Result<usize, Box<dyn std::err
   Ok(workbook_part.worksheet_parts(&document).count())
 }
 // ANCHOR_END: open_spreadsheet_read_only
+
+// ANCHOR: create_spreadsheet_document
+pub fn create_spreadsheet_document() -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = SpreadsheetDocument::create(SpreadsheetDocumentType::Workbook);
+  let workbook_part = document.add_new_part_auto_id::<WorkbookPart>()?;
+  let worksheet_part = workbook_part.add_new_part_auto_id::<_, WorksheetPart>(&mut document)?;
+  let worksheet_relationship_id = workbook_part
+    .get_id_of_part(&document, &worksheet_part)
+    .expect("worksheet relationship id")
+    .to_string();
+
+  workbook_part.set_data(
+    &mut document,
+    format!(
+      r#"<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Sheet1" sheetId="1" r:id="{worksheet_relationship_id}"/></sheets></workbook>"#
+    )
+    .into_bytes(),
+  )?;
+  worksheet_part.set_data(
+    &mut document,
+    br#"<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData/></worksheet>"#.to_vec(),
+  )?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: create_spreadsheet_document
 
 // ANCHOR: list_worksheets
 pub fn list_worksheets(path: &Path) -> Result<Vec<String>, Box<dyn std::error::Error>> {
@@ -348,6 +379,16 @@ mod tests {
     let count = open_spreadsheet_read_only(&fixture).expect("open spreadsheet");
 
     assert_eq!(count, 2);
+  }
+
+  #[test]
+  fn creates_spreadsheet_document() {
+    let bytes = create_spreadsheet_document().expect("create spreadsheet");
+    let document =
+      SpreadsheetDocument::new(std::io::Cursor::new(bytes)).expect("reopen spreadsheet");
+    let workbook_part = document.workbook_part().expect("workbook part");
+
+    assert_eq!(workbook_part.worksheet_parts(&document).count(), 1);
   }
 
   #[test]
