@@ -16,3 +16,7 @@ section-number = true
 optional = true
 command = "mdbook-renderkit render-docx"
 section-number = true
+
+[output.epub]
+optional = true
+command = "mdbook-renderkit render-epub"
