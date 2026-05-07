@@ -1,7 +1,5 @@
 # Getting started with ooxmlsdk
 
-This book targets `ooxmlsdk 0.6.1`, the latest version available in the local upstream checkout used for this documentation update.
-
 `ooxmlsdk` is a Rust library for reading, writing, and round-tripping Office Open XML documents such as `.docx`, `.xlsx`, and `.pptx`. Its package API exposes generated Rust schema types, serializers, deserializers, and strongly typed package parts.
 
 ## Rust package
@@ -45,7 +43,7 @@ Feature-gated modules are:
 
 ## Feature flags
 
-`ooxmlsdk` 0.6.1 has a small public feature surface:
+`ooxmlsdk` has a small public feature surface:
 
 - `default`: enables `parts`; this is the recommended configuration for most users.
 - `parts`: enables package-level OOXML read/write APIs such as `WordprocessingDocument`, `SpreadsheetDocument`, and `PresentationDocument`.

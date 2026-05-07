@@ -25,4 +25,4 @@ This chapter does not yet publish a hidden-text remover. A correct implementatio
 
 The upstream sample removes runs whose run properties contain `vanish`, and removes extra `vanish` elements when they are not under a run. That is a useful cleanup pattern for direct formatting, but a complete Rust implementation should also account for hidden text inherited from character or paragraph styles.
 
-In ooxmlsdk 0.6.1, generated schema types include `Vanish`, `RunProperties`, `Run`, `ParagraphProperties`, and `Text`.
+In `ooxmlsdk`, generated schema types include `Vanish`, `RunProperties`, `Run`, `ParagraphProperties`, and `Text`.

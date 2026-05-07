@@ -41,4 +41,4 @@ This chapter shares the same implementation boundary as [Add tables to word proc
 
 The sample flow creates table properties, adds border elements, creates a row, creates a cell with width properties and a paragraph/run/text child, then appends the table to the document body. If cloning cells, clone XML structure carefully so relationship-backed content is not duplicated incorrectly.
 
-In ooxmlsdk 0.6.1, generated schema types include `Table`, `TableProperties`, `TableWidth`, `TableBorders`, `TopBorder`, `LeftBorder`, `BottomBorder`, `RightBorder`, `TableGrid`, `GridColumn`, `TableRow`, `TableCell`, `TableCellProperties`, `TableCellWidth`, `Paragraph`, `Run`, and `Text`.
+In `ooxmlsdk`, generated schema types include `Table`, `TableProperties`, `TableWidth`, `TableBorders`, `TopBorder`, `LeftBorder`, `BottomBorder`, `RightBorder`, `TableGrid`, `GridColumn`, `TableRow`, `TableCell`, `TableCellProperties`, `TableCellWidth`, `Paragraph`, `Run`, and `Text`.

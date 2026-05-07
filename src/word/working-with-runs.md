@@ -29,4 +29,4 @@ The text helper extracts `<w:t/>` values from the main document:
 
 For formatting-sensitive tasks, preserve run boundaries and update only the target run or run property subtree.
 
-In ooxmlsdk 0.6.1, generated schema types include `Run`, `RunProperties`, `Text`, `Bold`, `Italic`, `Color`, `RunFonts`, `FontSize`, `Underline`, `Strike`, and `SmallCaps`.
+In `ooxmlsdk`, generated schema types include `Run`, `RunProperties`, `Text`, `Bold`, `Italic`, `Color`, `RunFonts`, `FontSize`, `Underline`, `Strike`, and `SmallCaps`.

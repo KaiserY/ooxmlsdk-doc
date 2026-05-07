@@ -25,7 +25,7 @@ Start by opening the presentation and locating the target slide:
 {{#include ../../listings/presentation/src/lib.rs:open_presentation_read_only}}
 ```
 
-This chapter does not yet include a tested Rust reply writer for `ooxmlsdk 0.6.1`. Before documenting one, add fixture coverage for:
+This chapter does not yet include a tested Rust reply writer for `ooxmlsdk`. Before documenting one, add fixture coverage for:
 
 - presentations with classic comments,
 - presentations with modern threaded comments,

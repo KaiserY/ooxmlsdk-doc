@@ -39,7 +39,7 @@ Navigate from the presentation to the target slide first:
 {{#include ../../listings/presentation/src/lib.rs:get_slide_text}}
 ```
 
-`ooxmlsdk 0.6.1` exposes the package graph needed for comment parts, but this page does not yet publish a writer. A tested comment insertion example must cover:
+`ooxmlsdk` exposes the package graph needed for comment parts, but this page does not yet publish a writer. A tested comment insertion example must cover:
 
 - creating or finding the comment authors part,
 - creating or finding the slide comment part,

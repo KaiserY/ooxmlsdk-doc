@@ -26,4 +26,4 @@ Use the comment id to connect body references with comment entries.
 
 The `comments` element is the root of the comments part and contains zero or more `comment` children. A `comment` can contain block-level WordprocessingML content such as paragraphs. If a comment id is not referenced by a matching `commentReference` in document content, a consuming application may ignore it; if more than one comment has the same id, only one may be loaded.
 
-In ooxmlsdk 0.6.1, generated schema types include `Comments`, `Comment`, and `CommentReference`.
+In `ooxmlsdk`, generated schema types include `Comments`, `Comment`, and `CommentReference`.

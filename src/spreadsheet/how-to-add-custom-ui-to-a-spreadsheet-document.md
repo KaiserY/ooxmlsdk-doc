@@ -23,4 +23,4 @@ Use `SpreadsheetDocument` to open and save the package, and use package relation
 {{#include ../../listings/spreadsheet/src/lib.rs:open_spreadsheet_read_only}}
 ```
 
-This chapter does not yet include a tested custom UI writer for `ooxmlsdk 0.6.1`.
+This chapter does not yet include a tested custom UI writer for `ooxmlsdk`.

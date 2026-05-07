@@ -2,7 +2,7 @@
 
 Open XML files are ZIP-based packages. A valid package needs content types, relationships, and at least the required root part for the document category you are creating.
 
-In `ooxmlsdk 0.6.1`, package read/write APIs are available through types such as `WordprocessingDocument`, `SpreadsheetDocument`, and `PresentationDocument`. Use each document type's `create(...)` constructor to start a new package, add the required main part and child parts, then save to the file or writer your application owns.
+In `ooxmlsdk`, package read/write APIs are available through types such as `WordprocessingDocument`, `SpreadsheetDocument`, and `PresentationDocument`. Use each document type's `create(...)` constructor to start a new package, add the required main part and child parts, then save to the file or writer your application owns.
 
 ## Rust workflow
 

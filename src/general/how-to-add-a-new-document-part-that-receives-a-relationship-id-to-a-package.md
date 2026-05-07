@@ -1,6 +1,6 @@
 # Add a new document part with a relationship ID
 
-Some package edits need a caller-provided relationship ID. `ooxmlsdk 0.6.1` supports this pattern for many typed child parts through `*_with_id` methods.
+Some package edits need a caller-provided relationship ID. `ooxmlsdk` supports this pattern for many typed child parts through `*_with_id` methods.
 
 The upstream sample creates a WordprocessingML package and assigns specific relationship IDs to newly added parts. In Rust, use the same idea when the relationship ID is part of an external contract; otherwise, let the crate allocate IDs for you.
 

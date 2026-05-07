@@ -47,6 +47,6 @@ Start from the slide part and follow its notes slide relationship if present. Th
 {{#include ../../listings/presentation/src/lib.rs:get_slide_text}}
 ```
 
-`ooxmlsdk 0.6.1` provides the package and typed part graph. A writer for notes slides needs to update the slide relationship, notes part XML, optional notes master references, and content type declarations together; this chapter keeps that as future tested work.
+`ooxmlsdk` provides the package and typed part graph. A writer for notes slides needs to update the slide relationship, notes part XML, optional notes master references, and content type declarations together; this chapter keeps that as future tested work.
 
 When adding notes to a deck that lacks notes infrastructure, also account for the notes master part and its theme relationship. The upstream sample creates missing notes slide, notes master, and theme parts together.

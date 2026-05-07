@@ -45,4 +45,4 @@ The document text helper includes text found inside table cells:
 
 For table-specific edits, parse `<w:tbl/>`, `<w:tr/>`, and `<w:tc/>` boundaries so updates do not affect unrelated body paragraphs.
 
-In ooxmlsdk 0.6.1, generated schema types include `Table`, `TableProperties`, `TableGrid`, `GridColumn`, `TableRow`, `TableRowProperties`, `TableCell`, `TableCellProperties`, `TableStyle`, `TableWidth`, and `TableBorders`.
+In `ooxmlsdk`, generated schema types include `Table`, `TableProperties`, `TableGrid`, `GridColumn`, `TableRow`, `TableRowProperties`, `TableCell`, `TableCellProperties`, `TableStyle`, `TableWidth`, and `TableBorders`.

@@ -26,4 +26,4 @@ Use the main document part as the insertion point:
 
 This chapter does not yet publish a picture writer. A final implementation should add the image part, create the relationship, insert valid drawing markup, and verify the saved document.
 
-In ooxmlsdk 0.6.1, `MainDocumentPart::image_parts(&document)` traverses existing image parts. A writer needs package mutation support for adding a new image part and relationship, plus DrawingML generation for dimensions, non-visual properties, blip fill, and inline or anchored layout.
+In `ooxmlsdk`, `MainDocumentPart::image_parts(&document)` traverses existing image parts. A writer needs package mutation support for adding a new image part and relationship, plus DrawingML generation for dimensions, non-visual properties, blip fill, and inline or anchored layout.

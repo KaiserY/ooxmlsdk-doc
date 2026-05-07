@@ -26,4 +26,4 @@ Not every document contains every property. Treat this part as optional.
 
 Unlike core properties, individual extended properties can be absent when the producing application did not set them. Check the part and each requested element before reading text.
 
-In ooxmlsdk 0.6.1, `WordprocessingDocument::extended_file_properties_part()` locates the part when present.
+In `ooxmlsdk`, `WordprocessingDocument::extended_file_properties_part()` locates the part when present.

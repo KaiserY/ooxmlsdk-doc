@@ -2,7 +2,7 @@
 
 Creating an `.xlsx` from scratch requires package relationships, content types, a workbook part, a workbook relationship item, and at least one worksheet part.
 
-In `ooxmlsdk 0.6.1`, create the package with `SpreadsheetDocument::create(SpreadsheetDocumentType::Workbook)`, add the workbook part, add worksheet parts from the workbook part, write the root XML, and save the package to the file or writer your application owns.
+In `ooxmlsdk`, create the package with `SpreadsheetDocument::create(SpreadsheetDocumentType::Workbook)`, add the workbook part, add worksheet parts from the workbook part, write the root XML, and save the package to the file or writer your application owns.
 
 Choose the package type and file extension together. A normal workbook uses `.xlsx`; macro-enabled workbooks, templates, and add-ins use different extensions and content types. Excel can reject a file when the package type and extension do not match.
 

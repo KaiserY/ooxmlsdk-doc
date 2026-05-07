@@ -22,7 +22,7 @@ Rules can express cell comparisons, top/bottom items, data bars, color scales, i
 </conditionalFormatting>
 ```
 
-In ooxmlsdk 0.6.1, the generated schema types include `ConditionalFormatting`, `ConditionalFormattingRule`, `DataBar`, `ColorScale`, and `IconSet`. A `dxfId` references differential formatting in the styles part, so readers often need worksheet XML and styles XML together.
+In `ooxmlsdk`, the generated schema types include `ConditionalFormatting`, `ConditionalFormattingRule`, `DataBar`, `ColorScale`, and `IconSet`. A `dxfId` references differential formatting in the styles part, so readers often need worksheet XML and styles XML together.
 
 Data bars use conditional-format value objects (`cfvo`) for minimum and maximum thresholds plus a color. Color scales use two or three `cfvo` entries and matching colors. Icon sets use threshold values to decide which icon applies to each cell. Rule `priority` values are global within the worksheet, so insertion code must preserve a coherent priority order.
 

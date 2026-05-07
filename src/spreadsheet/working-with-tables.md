@@ -38,4 +38,4 @@ This chapter does not yet include a table writer. A safe implementation must upd
 
 To keep autofilter enabled, include an `autoFilter` element, even if it has no active criteria. Table columns live under `tableColumns`, whose `count` must match the number of `tableColumn` children.
 
-In ooxmlsdk 0.6.1, `WorksheetPart::table_definition_parts(&document)` traverses table definition parts, and generated schema types include `Table`, `TableColumn`, and `AutoFilter`.
+In `ooxmlsdk`, `WorksheetPart::table_definition_parts(&document)` traverses table definition parts, and generated schema types include `Table`, `TableColumn`, and `AutoFilter`.

@@ -1,8 +1,14 @@
 # Preface
 
-This book targets `ooxmlsdk 0.6.1`, the latest version available in the local upstream checkout used for this documentation update.
+This book documents `ooxmlsdk` 0.6.1. Unless a page explicitly names another version, descriptions and examples in this book should be read as applying to 0.6.1.
 
-This mdBook is now an `ooxmlsdk`-focused Rust guide for working with Office Open XML packages.
+Project links:
+
+- Source: <https://github.com/KaiserY/ooxmlsdk>
+- Crate: <https://crates.io/crates/ooxmlsdk>
+- API documentation: <https://docs.rs/ooxmlsdk/latest/ooxmlsdk/>
+
+This mdBook is an `ooxmlsdk`-focused Rust guide for working with Office Open XML packages.
 
 The repository originally used public Office Open XML documentation as source material while the guide was being ported. First-round pages have been rewritten around Rust examples, Cargo workspaces, and tested snippets under `listings/`.
 

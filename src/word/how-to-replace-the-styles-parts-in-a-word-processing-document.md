@@ -16,4 +16,4 @@ This chapter does not yet publish a styles replacement writer. A final implement
 
 The upstream workflow extracts a complete styles part from a source document, then writes that XML into the target styles part. If the requested target part does not exist, decide whether to create it or return an explicit error. Replacing styles can change document appearance immediately because paragraphs, runs, tables, and numbering reference style ids.
 
-In ooxmlsdk 0.6.1, use `MainDocumentPart::style_definitions_part(&document)` for the normal styles part and `MainDocumentPart::styles_with_effects_part(&document)` when present.
+In `ooxmlsdk`, use `MainDocumentPart::style_definitions_part(&document)` for the normal styles part and `MainDocumentPart::styles_with_effects_part(&document)` when present.

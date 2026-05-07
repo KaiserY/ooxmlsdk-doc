@@ -16,7 +16,7 @@ Common revision elements include:
 | `<w:moveFrom/>` / ranges | Remove the move source content. |
 | `<w:moveTo/>` / ranges | Keep the move destination content and remove move metadata. |
 
-In ooxmlsdk 0.6.1, generated schema types for these elements include `ParagraphPropertiesChange`, `Deleted`, `Inserted`, `MoveFrom`, `MoveTo`, `MoveFromRangeStart`, `MoveFromRangeEnd`, `MoveToRangeStart`, and `MoveToRangeEnd`.
+In `ooxmlsdk`, generated schema types for these elements include `ParagraphPropertiesChange`, `Deleted`, `Inserted`, `MoveFrom`, `MoveTo`, `MoveFromRangeStart`, `MoveFromRangeEnd`, `MoveToRangeStart`, and `MoveToRangeEnd`.
 
 ## Rust workflow
 

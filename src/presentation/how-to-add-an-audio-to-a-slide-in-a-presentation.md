@@ -40,7 +40,7 @@ Use `ooxmlsdk` to open the presentation and find the target slide:
 {{#include ../../listings/presentation/src/lib.rs:open_presentation_read_only}}
 ```
 
-`ooxmlsdk 0.6.1` exposes media data part and audio reference relationship helpers, but this chapter does not yet include a tested writer. A complete audio insertion example must verify all of these together:
+`ooxmlsdk` exposes media data part and audio reference relationship helpers, but this chapter does not yet include a tested writer. A complete audio insertion example must verify all of these together:
 
 - media data part content type and extension,
 - slide audio and media reference relationships,

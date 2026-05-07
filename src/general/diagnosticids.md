@@ -2,7 +2,7 @@
 
 This page originally documented compiler diagnostic IDs used by the upstream SDK.
 
-`ooxmlsdk 0.6.1` does not currently define custom Rust diagnostic IDs for obsolete or experimental APIs. Rust users should rely on the normal Rust compiler diagnostics, Cargo feature errors, crate documentation, and `ooxmlsdk::common::SdkError` values returned at runtime.
+`ooxmlsdk` does not currently define custom Rust diagnostic IDs for obsolete or experimental APIs. Rust users should rely on the normal Rust compiler diagnostics, Cargo feature errors, crate documentation, and `ooxmlsdk::common::SdkError` values returned at runtime.
 
 The upstream `OOXML0001` diagnostic is specific to an experimental .NET package abstraction and does not apply to this Rust crate.
 

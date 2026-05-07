@@ -25,4 +25,4 @@ Open the main document part and inspect section properties:
 
 This chapter does not yet publish an orientation writer. A safe implementation must update the intended section, swap width and height when needed, and preserve other section settings.
 
-In ooxmlsdk 0.6.1, generated schema types include `SectionProperties`, `PageSize`, and `PageMargin`. The `w:orient` attribute can be absent; absence normally behaves like portrait, so a writer should avoid rewriting sections whose effective orientation already matches the requested value.
+In `ooxmlsdk`, generated schema types include `SectionProperties`, `PageSize`, and `PageMargin`. The `w:orient` attribute can be absent; absence normally behaves like portrait, so a writer should avoid rewriting sections whose effective orientation already matches the requested value.

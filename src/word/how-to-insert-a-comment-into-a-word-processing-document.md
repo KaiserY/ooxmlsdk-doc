@@ -33,4 +33,4 @@ This chapter does not yet publish a comment writer. A safe implementation must c
 
 Allocate a new comment id by scanning existing comments and adding one to the maximum id. If the comments part is absent, create it with a `comments` root before appending the new `comment`.
 
-In ooxmlsdk 0.6.1, generated schema types include `Comments`, `Comment`, `CommentRangeStart`, `CommentRangeEnd`, and `CommentReference`.
+In `ooxmlsdk`, generated schema types include `Comments`, `Comment`, `CommentRangeStart`, `CommentRangeEnd`, and `CommentReference`.

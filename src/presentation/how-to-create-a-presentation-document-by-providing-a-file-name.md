@@ -2,7 +2,7 @@
 
 Creating a `.pptx` from scratch requires more than writing `ppt/presentation.xml`. A valid package also needs content type declarations, package relationships, presentation relationships, slide parts, and any required masters or layouts.
 
-In `ooxmlsdk 0.6.1`, create the package with `PresentationDocument::create(PresentationDocumentType::Presentation)`, add the presentation part, add slide parts from the presentation part, write the root XML, and save the package to the file or writer your application owns.
+In `ooxmlsdk`, create the package with `PresentationDocument::create(PresentationDocumentType::Presentation)`, add the presentation part, add slide parts from the presentation part, write the root XML, and save the package to the file or writer your application owns.
 
 ## Minimal package pieces
 

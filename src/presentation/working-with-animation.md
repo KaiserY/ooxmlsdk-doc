@@ -43,7 +43,7 @@ In `ooxmlsdk`, the corresponding generated types live under `ooxmlsdk::schemas::
 
 ## Rust workflow
 
-`ooxmlsdk 0.6.1` can open the presentation package and read slide part XML. A conservative animation inspection workflow is:
+`ooxmlsdk` can open the presentation package and read slide part XML. A conservative animation inspection workflow is:
 
 1. Open the `.pptx` with `PresentationDocument`.
 2. Iterate slide parts with `presentation_part.slide_parts(&document)`.

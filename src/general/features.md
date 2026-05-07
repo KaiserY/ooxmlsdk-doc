@@ -1,8 +1,8 @@
 # Cargo feature flags
 
-`ooxmlsdk 0.6.1` uses Cargo features to control optional API surface.
+`ooxmlsdk` uses Cargo features to control optional API surface.
 
-This page is about Rust crate features. The upstream SDK feature-collection extension model does not have a direct equivalent in `ooxmlsdk 0.6.1`.
+This page is about Rust crate features. The upstream SDK feature-collection extension model does not have a direct equivalent in `ooxmlsdk`.
 
 Cargo features are compile-time switches. They choose which optional modules and dependencies are built into your binary; they are not per-package state, event hooks, or service registrations.
 
@@ -67,4 +67,4 @@ Validation support is opt-in so projects that only need package parsing, modific
 
 ## Not yet modeled
 
-The upstream runtime feature collection includes behaviors such as package events, part events, disposal callbacks, random-number services, and automatic paragraph ID generation. Those are not exposed as `ooxmlsdk 0.6.1` APIs. When porting examples that depend on those services, write the state management explicitly in Rust or leave the page unchanged until a tested crate API exists.
+The upstream runtime feature collection includes behaviors such as package events, part events, disposal callbacks, random-number services, and automatic paragraph ID generation. Those are not exposed as `ooxmlsdk` APIs. When porting examples that depend on those services, write the state management explicitly in Rust or leave the page unchanged until a tested crate API exists.

@@ -2,6 +2,14 @@
 
 `ooxmlsdk` is a Rust library for reading, writing, and round-tripping Office Open XML packages such as `.docx`, `.xlsx`, and `.pptx`.
 
+This documentation targets `ooxmlsdk` 0.6.1. Unless a page explicitly says otherwise, all API descriptions, limitations, and examples refer to 0.6.1.
+
+Core project links:
+
+- Source: <https://github.com/KaiserY/ooxmlsdk>
+- Crate: <https://crates.io/crates/ooxmlsdk>
+- API documentation: <https://docs.rs/ooxmlsdk/latest/ooxmlsdk/>
+
 Office Open XML is standardized by [ECMA-376](https://www.ecma-international.org/publications-and-standards/standards/ecma-376/) and [ISO/IEC 29500](https://www.iso.org/standard/71691.html). The file formats are ZIP packages containing XML parts and explicit relationships, which makes them suitable for Rust tooling that needs deterministic package inspection or transformation.
 
 The crate provides generated schema types, serializers, deserializers, and strongly typed package parts. Its API is Rust-native: methods return `Result`, package and part types are regular Rust structs, and optional functionality is controlled by Cargo features.
@@ -24,5 +32,5 @@ The crate provides generated schema types, serializers, deserializers, and stron
 ## References
 
 - [`ooxmlsdk` on crates.io](https://crates.io/crates/ooxmlsdk)
-- [`ooxmlsdk` API documentation](https://docs.rs/ooxmlsdk)
+- [`ooxmlsdk` API documentation](https://docs.rs/ooxmlsdk/latest/ooxmlsdk/)
 - [`ooxmlsdk` source repository](https://github.com/KaiserY/ooxmlsdk)

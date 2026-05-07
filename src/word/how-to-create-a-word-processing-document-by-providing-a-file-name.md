@@ -2,7 +2,7 @@
 
 Creating a `.docx` from scratch requires package relationships, content types, and at least a main document part with valid WordprocessingML.
 
-In `ooxmlsdk 0.6.1`, create the package with `WordprocessingDocument::create(WordprocessingDocumentType::Document)`, add the main document part, write valid WordprocessingML, and save the package to the file or writer your application owns.
+In `ooxmlsdk`, create the package with `WordprocessingDocument::create(WordprocessingDocumentType::Document)`, add the main document part, write valid WordprocessingML, and save the package to the file or writer your application owns.
 
 Choose the package type and file extension together. A standard document should be saved as `.docx`; macro-enabled documents and templates require different content types and extensions. Use `WordprocessingDocumentType::MacroEnabledDocument`, `Template`, or `MacroEnabledTemplate` when the target package is not a normal `.docx`.
 
@@ -35,4 +35,4 @@ The minimal main document XML is a `document` root with a `body`, usually contai
 </w:document>
 ```
 
-In ooxmlsdk 0.6.1, generated schema types include `Document`, `Body`, `Paragraph`, `Run`, and `Text`. The example above writes XML bytes directly for compactness; a larger writer can instead build the generated root type and call `set_root_element`.
+In `ooxmlsdk`, generated schema types include `Document`, `Body`, `Paragraph`, `Run`, and `Text`. The example above writes XML bytes directly for compactness; a larger writer can instead build the generated root type and call `set_root_element`.

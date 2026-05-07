@@ -34,4 +34,4 @@ Read existing styles first:
 
 This chapter does not yet publish a style writer. A final implementation should create the styles part when missing, avoid duplicate style ids, and save valid style XML.
 
-In ooxmlsdk 0.6.1, generated schema types include `Styles`, `Style`, `Aliases`, `StyleName`, `StyleRunProperties`, `RunStyle`, `RunFonts`, `FontSize`, `Color`, `Bold`, and `Italic`.
+In `ooxmlsdk`, generated schema types include `Styles`, `Style`, `Aliases`, `StyleName`, `StyleRunProperties`, `RunStyle`, `RunFonts`, `FontSize`, `Color`, `Bold`, and `Italic`.

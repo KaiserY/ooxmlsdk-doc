@@ -4,7 +4,7 @@ Markup Compatibility and Extensibility, usually shortened to MCE, is the Open XM
 
 For example, a Word document can contain an `mc:AlternateContent` element with a newer choice and an older fallback. A consumer chooses the content it understands and ignores or removes markup that is outside its target compatibility set.
 
-`ooxmlsdk 0.6.1` exposes MCE processing behind the `mce` Cargo feature.
+`ooxmlsdk` exposes MCE processing behind the `mce` Cargo feature.
 
 ## Enable MCE support
 
