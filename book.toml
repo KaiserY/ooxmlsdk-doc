@@ -2,3 +2,17 @@
 title = "ooxmlsdk-doc"
 authors = []
 language = "en"
+
+[preprocessor.renderkit]
+optional = true
+command = "mdbook-renderkit preprocess"
+
+[output.pdf]
+optional = true
+command = "mdbook-renderkit render-pdf"
+section-number = true
+
+[output.docx]
+optional = true
+command = "mdbook-renderkit render-docx"
+section-number = true
