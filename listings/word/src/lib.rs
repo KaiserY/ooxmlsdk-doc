@@ -5,6 +5,7 @@ use std::path::Path;
 use ooxmlsdk::parts::header_part::HeaderPart;
 use ooxmlsdk::parts::image_part::ImagePart;
 use ooxmlsdk::parts::style_definitions_part::StyleDefinitionsPart;
+use ooxmlsdk::parts::wordprocessing_comments_part::WordprocessingCommentsPart;
 use ooxmlsdk::parts::wordprocessing_document::WordprocessingDocument;
 use ooxmlsdk::sdk::{OpenSettings, PackageOpenMode, SdkPart, WordprocessingDocumentType};
 
@@ -386,6 +387,89 @@ pub fn remove_hidden_text(path: &Path) -> Result<Vec<u8>, Box<dyn std::error::Er
   Ok(buffer.into_inner())
 }
 // ANCHOR_END: remove_hidden_text
+
+// ANCHOR: insert_comment
+pub fn insert_comment(
+  path: &Path,
+  author: &str,
+  comment_text: &str,
+) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = WordprocessingDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let main_part = document.main_document_part()?;
+  let comments_part = if let Some(part) = main_part.wordprocessing_comments_part(&document) {
+    part
+  } else {
+    main_part.add_new_part_auto_id::<_, WordprocessingCommentsPart>(&mut document)?
+  };
+  let comments_xml = comments_part
+    .data_as_str(&document)?
+    .map(str::to_string)
+    .unwrap_or_else(empty_comments_xml);
+  let comment_id = next_comment_id(&comments_xml);
+  let updated_comments = append_comment(&comments_xml, comment_id, author, comment_text)?;
+  comments_part.set_data(&mut document, updated_comments.into_bytes())?;
+
+  let document_xml = main_part.data_as_str(&document)?.unwrap_or_default();
+  let updated_document = add_comment_markers_to_first_paragraph(document_xml, comment_id)?;
+  main_part.set_data(&mut document, updated_document.into_bytes())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: insert_comment
+
+// ANCHOR: delete_comments_by_author
+pub fn delete_comments_by_author(
+  path: &Path,
+  author: Option<&str>,
+) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = WordprocessingDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let main_part = document.main_document_part()?;
+  let Some(comments_part) = main_part.wordprocessing_comments_part(&document) else {
+    let mut buffer = Cursor::new(Vec::new());
+    document.save(&mut buffer)?;
+    return Ok(buffer.into_inner());
+  };
+  let comments_xml = comments_part.data_as_str(&document)?.unwrap_or_default();
+  let deleted_ids = matching_comment_ids(comments_xml, author);
+  let updated_comments = remove_comments_by_id(comments_xml, &deleted_ids);
+  comments_part.set_data(&mut document, updated_comments.into_bytes())?;
+
+  let document_xml = main_part.data_as_str(&document)?.unwrap_or_default();
+  let updated_document = remove_comment_markers(document_xml, &deleted_ids);
+  main_part.set_data(&mut document, updated_document.into_bytes())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: delete_comments_by_author
+
+// ANCHOR: insert_picture
+pub fn insert_picture(
+  path: &Path,
+  relationship_id: &str,
+  content_type: &str,
+  image_bytes: &[u8],
+) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = WordprocessingDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let main_part = document.main_document_part()?;
+  let image_part =
+    main_part.add_image_part_with_id(&mut document, content_type.to_string(), relationship_id)?;
+  image_part.set_data(&mut document, image_bytes.to_vec())?;
+
+  let document_xml = main_part.data_as_str(&document)?.unwrap_or_default();
+  let document_xml = ensure_relationship_namespace(document_xml);
+  let picture = picture_paragraph_xml(relationship_id, 990_000, 792_000);
+  let updated_xml = insert_before_section_properties(&document_xml, &picture)?;
+  main_part.set_data(&mut document, updated_xml.into_bytes())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: insert_picture
 
 fn lazy_settings() -> OpenSettings {
   OpenSettings {
@@ -800,6 +884,184 @@ fn has_direct_vanish(run_xml: &str) -> bool {
   !matches!(
     extract_attr(vanish_tag, "w:val"),
     Some("0" | "false" | "off")
+  )
+}
+
+fn empty_comments_xml() -> String {
+  r#"<w:comments xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"></w:comments>"#
+    .to_string()
+}
+
+fn next_comment_id(comments_xml: &str) -> u32 {
+  let mut max_id = None;
+  let mut rest = comments_xml;
+
+  while let Some(start) = rest.find("<w:comment ") {
+    rest = &rest[start..];
+    let Some(tag_end) = rest.find('>') else {
+      break;
+    };
+    if let Some(id) = extract_attr(&rest[..tag_end], "w:id").and_then(|value| value.parse().ok()) {
+      max_id = Some(max_id.map_or(id, |current: u32| current.max(id)));
+    }
+    rest = &rest[tag_end + 1..];
+  }
+
+  max_id.map_or(0, |id| id + 1)
+}
+
+fn append_comment(
+  comments_xml: &str,
+  comment_id: u32,
+  author: &str,
+  comment_text: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+  let Some(insert_at) = comments_xml.find("</w:comments>") else {
+    return Err("comments root not found".into());
+  };
+  let author = escape_xml_attr(author);
+  let comment_text = escape_xml_text(comment_text);
+  let comment = format!(
+    r#"<w:comment w:id="{comment_id}" w:author="{author}"><w:p><w:r><w:t>{comment_text}</w:t></w:r></w:p></w:comment>"#
+  );
+  let mut updated = String::with_capacity(comments_xml.len() + comment.len());
+  updated.push_str(&comments_xml[..insert_at]);
+  updated.push_str(&comment);
+  updated.push_str(&comments_xml[insert_at..]);
+  Ok(updated)
+}
+
+fn add_comment_markers_to_first_paragraph(
+  document_xml: &str,
+  comment_id: u32,
+) -> Result<String, Box<dyn std::error::Error>> {
+  let paragraph_start = document_xml.find("<w:p>").ok_or("paragraph not found")?;
+  let paragraph_open_end = paragraph_start + "<w:p>".len();
+  let paragraph_end = document_xml[paragraph_open_end..]
+    .find("</w:p>")
+    .map(|index| paragraph_open_end + index)
+    .ok_or("paragraph end not found")?;
+  let paragraph_inner = &document_xml[paragraph_open_end..paragraph_end];
+  let run_start = paragraph_inner.find("<w:r").ok_or("run not found")?;
+  let run_end = paragraph_inner[run_start..]
+    .find("</w:r>")
+    .map(|index| run_start + index + "</w:r>".len())
+    .ok_or("run end not found")?;
+  let markers_start = format!(r#"<w:commentRangeStart w:id="{comment_id}"/>"#);
+  let markers_end = format!(
+    r#"<w:commentRangeEnd w:id="{comment_id}"/><w:r><w:commentReference w:id="{comment_id}"/></w:r>"#
+  );
+
+  let mut updated_inner =
+    String::with_capacity(paragraph_inner.len() + markers_start.len() + markers_end.len());
+  updated_inner.push_str(&paragraph_inner[..run_start]);
+  updated_inner.push_str(&markers_start);
+  updated_inner.push_str(&paragraph_inner[run_start..run_end]);
+  updated_inner.push_str(&markers_end);
+  updated_inner.push_str(&paragraph_inner[run_end..]);
+
+  let mut updated =
+    String::with_capacity(document_xml.len() + markers_start.len() + markers_end.len());
+  updated.push_str(&document_xml[..paragraph_open_end]);
+  updated.push_str(&updated_inner);
+  updated.push_str(&document_xml[paragraph_end..]);
+  Ok(updated)
+}
+
+fn matching_comment_ids(comments_xml: &str, author: Option<&str>) -> Vec<String> {
+  let mut ids = Vec::new();
+  let mut rest = comments_xml;
+
+  while let Some(start) = rest.find("<w:comment ") {
+    rest = &rest[start..];
+    let Some(tag_end) = rest.find('>') else {
+      break;
+    };
+    let tag = &rest[..tag_end];
+    let matches_author = author
+      .map(|expected| extract_attr(tag, "w:author") == Some(expected))
+      .unwrap_or(true);
+    if matches_author && let Some(id) = extract_attr(tag, "w:id") {
+      ids.push(id.to_string());
+    }
+    rest = &rest[tag_end + 1..];
+  }
+
+  ids
+}
+
+fn remove_comments_by_id(comments_xml: &str, ids: &[String]) -> String {
+  let mut output = String::with_capacity(comments_xml.len());
+  let mut rest = comments_xml;
+
+  while let Some(start) = rest.find("<w:comment ") {
+    output.push_str(&rest[..start]);
+    let comment_rest = &rest[start..];
+    let Some(tag_end) = comment_rest.find('>') else {
+      output.push_str(comment_rest);
+      return output;
+    };
+    let tag = &comment_rest[..tag_end];
+    let Some(close_start) = comment_rest[tag_end + 1..].find("</w:comment>") else {
+      output.push_str(comment_rest);
+      return output;
+    };
+    let comment_end = tag_end + 1 + close_start + "</w:comment>".len();
+    let should_delete =
+      extract_attr(tag, "w:id").is_some_and(|id| ids.iter().any(|value| value == id));
+    if !should_delete {
+      output.push_str(&comment_rest[..comment_end]);
+    }
+    rest = &comment_rest[comment_end..];
+  }
+
+  output.push_str(rest);
+  output
+}
+
+fn remove_comment_markers(document_xml: &str, ids: &[String]) -> String {
+  let mut updated = document_xml.to_string();
+  for id in ids {
+    updated = remove_element_by_attr(&updated, "<w:commentRangeStart", "w:id", id);
+    updated = remove_element_by_attr(&updated, "<w:commentRangeEnd", "w:id", id);
+    updated = remove_element_by_attr(&updated, "<w:commentReference", "w:id", id);
+  }
+  updated
+}
+
+fn remove_element_by_attr(
+  xml: &str,
+  start_pattern: &str,
+  attr_name: &str,
+  attr_value: &str,
+) -> String {
+  let mut output = String::with_capacity(xml.len());
+  let mut rest = xml;
+
+  while let Some(start) = rest.find(start_pattern) {
+    output.push_str(&rest[..start]);
+    let element_rest = &rest[start..];
+    let Some(open_end) = element_rest.find('>') else {
+      output.push_str(element_rest);
+      return output;
+    };
+    let tag = &element_rest[..open_end];
+    if extract_attr(tag, attr_name) == Some(attr_value) {
+      rest = &element_rest[open_end + 1..];
+    } else {
+      output.push_str(&element_rest[..open_end + 1]);
+      rest = &element_rest[open_end + 1..];
+    }
+  }
+
+  output.push_str(rest);
+  output
+}
+
+fn picture_paragraph_xml(relationship_id: &str, width_emu: u64, height_emu: u64) -> String {
+  let relationship_id = escape_xml_attr(relationship_id);
+  format!(
+    r#"<w:p><w:r><w:drawing><wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" distT="0" distB="0" distL="0" distR="0"><wp:extent cx="{width_emu}" cy="{height_emu}"/><wp:docPr id="1" name="Picture 1"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="0" name="Picture 1"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="{relationship_id}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="{width_emu}" cy="{height_emu}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>"#
   )
 }
 
@@ -1255,6 +1517,87 @@ mod tests {
     assert!(document_xml.contains("<w:t>Visible</w:t>"));
     assert!(!document_xml.contains("Hidden"));
     assert!(!document_xml.contains("<w:vanish"));
+  }
+
+  #[test]
+  fn inserts_comment_on_first_paragraph() {
+    let fixture = write_word_fixture();
+
+    let bytes = insert_comment(&fixture, "Grace", "Please review").expect("insert comment");
+
+    let reopened = WordprocessingDocument::new(Cursor::new(bytes)).expect("reopen document");
+    let main_part = reopened.main_document_part().expect("main document part");
+    let document_xml = main_part
+      .data_as_str(&reopened)
+      .expect("document xml")
+      .expect("document data");
+    let comments_part = main_part
+      .wordprocessing_comments_part(&reopened)
+      .expect("comments part");
+    let comments_xml = comments_part
+      .data_as_str(&reopened)
+      .expect("comments xml")
+      .expect("comments data");
+
+    assert!(comments_xml.contains(r#"<w:comment w:id="1" w:author="Grace">"#));
+    assert!(comments_xml.contains("<w:t>Please review</w:t>"));
+    assert!(document_xml.contains(r#"<w:commentRangeStart w:id="1"/>"#));
+    assert!(document_xml.contains(r#"<w:commentRangeEnd w:id="1"/>"#));
+    assert!(document_xml.contains(r#"<w:commentReference w:id="1"/>"#));
+  }
+
+  #[test]
+  fn deletes_comments_by_author() {
+    let fixture = write_word_fixture();
+    let bytes = insert_comment(&fixture, "Grace", "Please review").expect("insert comment");
+    let path = write_bytes_fixture("docx", bytes);
+
+    let bytes = delete_comments_by_author(&path, Some("Ada")).expect("delete comments");
+
+    let reopened = WordprocessingDocument::new(Cursor::new(bytes)).expect("reopen document");
+    let main_part = reopened.main_document_part().expect("main document part");
+    let document_xml = main_part
+      .data_as_str(&reopened)
+      .expect("document xml")
+      .expect("document data");
+    let comments_part = main_part
+      .wordprocessing_comments_part(&reopened)
+      .expect("comments part");
+    let comments_xml = comments_part
+      .data_as_str(&reopened)
+      .expect("comments xml")
+      .expect("comments data");
+
+    assert!(!comments_xml.contains(r#"w:author="Ada""#));
+    assert!(comments_xml.contains(r#"w:author="Grace""#));
+    assert!(!document_xml.contains(r#"<w:commentReference w:id="0"/>"#));
+    assert!(document_xml.contains(r#"<w:commentReference w:id="1"/>"#));
+  }
+
+  #[test]
+  fn inserts_picture_markup_and_image_part() {
+    let fixture = write_word_fixture();
+    let image_bytes = b"\x89PNG\r\n\x1a\nimage bytes";
+
+    let bytes =
+      insert_picture(&fixture, "rIdPicture1", "image/png", image_bytes).expect("insert picture");
+
+    let reopened = WordprocessingDocument::new(Cursor::new(bytes)).expect("reopen document");
+    let main_part = reopened.main_document_part().expect("main document part");
+    let document_xml = main_part
+      .data_as_str(&reopened)
+      .expect("document xml")
+      .expect("document data");
+    let image_part = main_part
+      .related_parts_of_type::<_, ImagePart>(&reopened)
+      .find(|related| related.relationship_id() == "rIdPicture1")
+      .map(|related| related.into_part())
+      .expect("image part");
+
+    assert_eq!(image_part.data(&reopened), Some(image_bytes.as_slice()));
+    assert!(document_xml.contains(r#"r:embed="rIdPicture1""#));
+    assert!(document_xml.contains("<wp:inline "));
+    assert!(document_xml.contains("<pic:pic "));
   }
 
   fn write_word_fixture() -> std::path::PathBuf {

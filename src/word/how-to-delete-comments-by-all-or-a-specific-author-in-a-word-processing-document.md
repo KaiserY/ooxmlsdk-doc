@@ -6,13 +6,11 @@ The comments part stores `<w:comment/>` elements with ids and author metadata. T
 
 ## Rust workflow
 
-Read the comments part first:
+Filter the comments part by author, then remove the corresponding body markers:
 
 ```rust
-{{#include ../../listings/word/src/lib.rs:get_comments}}
+{{#include ../../listings/word/src/lib.rs:delete_comments_by_author}}
 ```
-
-This chapter does not yet publish a deletion writer. A complete implementation should remove matching `<w:comment/>` entries, remove corresponding range start/end and reference markers, and preserve unrelated comments.
 
 For each deleted comment id, remove all matching `commentRangeStart`, `commentRangeEnd`, and `commentReference` elements from the main document. If a package has comments in headers, footers, footnotes, or endnotes, apply the same marker cleanup in those stories too.
 

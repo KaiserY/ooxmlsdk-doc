@@ -23,13 +23,11 @@ The same id must be used in the comment and in the document markers:
 
 ## Rust workflow
 
-Read existing comments before allocating ids:
+Read existing comments, allocate the next id, update `word/comments.xml`, and add markers around the first paragraph:
 
 ```rust
-{{#include ../../listings/word/src/lib.rs:get_comments}}
+{{#include ../../listings/word/src/lib.rs:insert_comment}}
 ```
-
-This chapter does not yet publish a comment writer. A safe implementation must create or update `word/comments.xml`, add body references, preserve existing ids, and save the package.
 
 Allocate a new comment id by scanning existing comments and adding one to the maximum id. If the comments part is absent, create it with a `comments` root before appending the new `comment`.
 
