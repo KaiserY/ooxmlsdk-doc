@@ -55,15 +55,18 @@ The runtime crate is generated from Open XML metadata. The generated surface inc
 - Schema structs and enums in `ooxmlsdk::schemas`.
 - Shared package traits and settings in `ooxmlsdk::sdk`.
 - Common package, relationship, XML, and error types in `ooxmlsdk::common`.
+- OOXML measure and percentage helpers in `ooxmlsdk::units`.
 
 Most package operations return `Result<_, ooxmlsdk::common::SdkError>` or can be used with `Box<dyn std::error::Error>` in examples. Optional package relationships are represented with `Option`, and collections are exposed through Rust iterators or vectors depending on the generated schema shape.
+
+In `ooxmlsdk` 0.7.0, generated schema fields use explicit simple value wrappers for OOXML booleans and typed unit values for many measures and percentages. Convert those values at the boundary of your application instead of assuming every schema attribute is a Rust `bool`, integer, or string.
 
 ## Common tasks
 
 `ooxmlsdk` supports the same broad task categories that matter when working with Open XML packages:
 
 - **Strongly typed package and schema access**: use generated Rust types instead of hand-writing every element and attribute name.
-- **Content construction, search, and manipulation**: traverse package relationships, inspect XML parts, load generated roots, and save updated packages.
+- **Content construction, search, and manipulation**: traverse package relationships, inspect XML parts, load generated roots, and save updated packages. Use typed child accessors for well-known parts, or related-part traversal helpers when you need to keep the relationship id with the target part.
 - **Validation-oriented workflows**: use optional validator APIs where available, and otherwise rely on explicit `Result` handling plus package/schema tests.
 
 ## Feature model

@@ -6,10 +6,19 @@ Slide transitions are stored on the slide that appears after the transition. The
 
 ```xml
 <p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+  <p:cSld>
+    <p:spTree>
+      <p:nvGrpSpPr>
+        <p:cNvPr id="1" name=""/>
+        <p:cNvGrpSpPr/>
+        <p:nvPr/>
+      </p:nvGrpSpPr>
+      <p:grpSpPr/>
+    </p:spTree>
+  </p:cSld>
   <p:transition spd="fast">
     <p:fade/>
   </p:transition>
-  <p:cSld/>
 </p:sld>
 ```
 

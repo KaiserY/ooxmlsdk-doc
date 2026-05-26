@@ -27,6 +27,8 @@ Use normal Rust error handling around package operations. Open, parse, and save 
 
 Keep ownership explicit. Load a package into a document type, mutate typed parts or root elements through `&mut` bindings, then call `save` with an output writer or file path flow that your application owns. When direct XML access is unavoidable, treat it as package-level editing and revalidate the affected parts.
 
+Generated schema fields model OOXML values, not only primitive Rust values. Boolean-like attributes, measurements, coordinates, and percentages may use `simple_type` or `units` wrappers so unknown lexical forms, compatibility values, and unit categories can round-trip correctly.
+
 When you only need package read/write APIs, the default `parts` feature is enough. Enable optional features deliberately:
 
 - Use `flat-opc` only when you need Flat OPC XML package representations.

@@ -14,4 +14,4 @@ rust-version = "1.88"
 license = "MIT OR Apache-2.0"
 
 [workspace.dependencies]
-ooxmlsdk = "0.6.1"
+ooxmlsdk = "0.7.0"

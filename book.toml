@@ -7,6 +7,8 @@ language = "en"
 optional = true
 command = "mdbook-renderkit preprocess"
 
+[output.html]
+
 [output.pdf]
 optional = true
 command = "mdbook-renderkit render-pdf"

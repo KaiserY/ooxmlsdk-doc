@@ -74,6 +74,12 @@ A slide part stores only one slide. Text and drawing content are under `<p:cSld/
   xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
   <p:cSld>
     <p:spTree>
+      <p:nvGrpSpPr>
+        <p:cNvPr id="1" name=""/>
+        <p:cNvGrpSpPr/>
+        <p:nvPr/>
+      </p:nvGrpSpPr>
+      <p:grpSpPr/>
       <p:sp>
         <p:txBody>
           <a:p><a:r><a:t>Hello</a:t></a:r></a:p>

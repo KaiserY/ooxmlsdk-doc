@@ -8,7 +8,7 @@ Add `ooxmlsdk` to your Cargo project:
 
 ```toml
 [dependencies]
-ooxmlsdk = "0.6.1"
+ooxmlsdk = "0.7.0"
 ```
 
 The default feature set enables the `parts` APIs used for `.docx`, `.xlsx`, and `.pptx` packages.
@@ -35,6 +35,7 @@ The always-available modules are:
 - `schemas`: generated schema structs and simple XML parsing/serialization support.
 - `sdk`: package and part traits, open settings, relationship helpers, and feature-related settings.
 - `simple_type`: generated simple type support.
+- `units`: OOXML measure, coordinate, angle, and percentage value helpers.
 
 Feature-gated modules are:
 
@@ -55,21 +56,21 @@ For package APIs without extra feature behavior:
 
 ```toml
 [dependencies]
-ooxmlsdk = { version = "0.6.1", default-features = false, features = ["parts"] }
+ooxmlsdk = { version = "0.7.0", default-features = false, features = ["parts"] }
 ```
 
 For Flat OPC helpers:
 
 ```toml
 [dependencies]
-ooxmlsdk = { version = "0.6.1", default-features = false, features = ["flat-opc"] }
+ooxmlsdk = { version = "0.7.0", default-features = false, features = ["flat-opc"] }
 ```
 
 For MCE processing during package open and root loading:
 
 ```toml
 [dependencies]
-ooxmlsdk = { version = "0.6.1", default-features = false, features = ["mce"] }
+ooxmlsdk = { version = "0.7.0", default-features = false, features = ["mce"] }
 ```
 
 ## Package API
@@ -82,6 +83,8 @@ With `parts` enabled, use the package type that matches the document family:
 
 Common operations include creating packages with `create`, opening packages with `new`, `new_with_settings`, `new_from_file`, or `new_from_file_with_settings`; creating editable packages from templates with `create_from_template`; checking and changing the package document type with `document_type` and `change_document_type`; detecting encrypted Office files with `is_encrypted_office_file` or `is_encrypted_office_file_path`; saving with `save`; inspecting relationships and parts; and accessing well-known child parts through typed methods such as `main_document_part`, `workbook_part`, `presentation_part`, and `worksheet_parts`.
 
+For lower-level traversal, 0.7.0 also exposes related-part helpers that can preserve the relationship id alongside the typed target part. Use those when a package edit needs to update XML `r:id` references and package relationships together.
+
 The package types also expose convenience output helpers:
 
 - `save` writes the current package to any `Write + Seek` target.
@@ -92,3 +95,7 @@ The package types also expose convenience output helpers:
 ## Version coverage
 
 `ooxmlsdk` treats Office 2007 as the compatibility baseline while generating Rust support for newer namespaces and parts present in its checked-in metadata. That includes Office 2010, 2013, 2016, 2019, 2021, and Microsoft 365-era extensions tracked by the crate.
+
+## Schema values
+
+The generated 0.7.0 schema API uses explicit wrappers for OOXML-specific values. Boolean-like schema attributes use types such as `BooleanValue` and `OnOffValue`, with conversion helpers such as `from_bool()` and `as_bool()`. Many lengths, coordinates, text sizes, and percentages use types from `ooxmlsdk::units`, which preserve the OOXML lexical form while still offering unit conversions.

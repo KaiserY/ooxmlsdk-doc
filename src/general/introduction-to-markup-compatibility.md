@@ -12,7 +12,7 @@ Add the feature to your manifest:
 
 ```toml
 [dependencies]
-ooxmlsdk = { version = "0.6.1", default-features = false, features = ["mce"] }
+ooxmlsdk = { version = "0.7.0", default-features = false, features = ["mce"] }
 ```
 
 The `mce` feature also enables `parts`.

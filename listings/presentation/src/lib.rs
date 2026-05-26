@@ -34,7 +34,7 @@ pub fn create_presentation_document() -> Result<Vec<u8>, Box<dyn std::error::Err
   )?;
   slide_part.set_data(
     &mut document,
-    br#"<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:spTree/></p:cSld></p:sld>"#.to_vec(),
+    br#"<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/></p:spTree></p:cSld></p:sld>"#.to_vec(),
   )?;
 
   let mut buffer = Cursor::new(Vec::new());
@@ -422,7 +422,7 @@ mod tests {
       .write_all(
         br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <p:sldLayout xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" type="title">
-  <p:cSld name="Title Slide"><p:spTree/></p:cSld>
+  <p:cSld name="Title Slide"><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/></p:spTree></p:cSld>
 </p:sldLayout>"#,
       )
       .expect("write slide layout");
@@ -459,7 +459,7 @@ mod tests {
     let xml = format!(
       r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"{show_attr}>
-  <p:cSld><p:spTree>{text_xml}{hyperlink_xml}</p:spTree></p:cSld>
+  <p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/>{text_xml}{hyperlink_xml}</p:spTree></p:cSld>
 </p:sld>"#
     );
     zip.write_all(xml.as_bytes()).expect("write slide");

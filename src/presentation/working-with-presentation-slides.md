@@ -14,6 +14,12 @@ The root element of a slide part is `<p:sld/>`. It contains common slide data, o
   xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
   <p:cSld>
     <p:spTree>
+      <p:nvGrpSpPr>
+        <p:cNvPr id="1" name=""/>
+        <p:cNvGrpSpPr/>
+        <p:nvPr/>
+      </p:nvGrpSpPr>
+      <p:grpSpPr/>
       <p:sp>
         <p:txBody>
           <a:p><a:r><a:t>Slide title</a:t></a:r></a:p>

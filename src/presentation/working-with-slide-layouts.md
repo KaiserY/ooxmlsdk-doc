@@ -12,6 +12,12 @@ The layout root can contain common slide data, header/footer settings, timing, t
   type="title">
   <p:cSld name="Title Slide">
     <p:spTree>
+      <p:nvGrpSpPr>
+        <p:cNvPr id="1" name=""/>
+        <p:cNvGrpSpPr/>
+        <p:nvPr/>
+      </p:nvGrpSpPr>
+      <p:grpSpPr/>
       <!-- placeholder and shape definitions -->
     </p:spTree>
   </p:cSld>

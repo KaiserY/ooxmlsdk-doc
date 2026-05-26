@@ -1,6 +1,6 @@
 # Preface
 
-This book documents `ooxmlsdk` 0.6.1. Unless a page explicitly names another version, descriptions and examples in this book should be read as applying to 0.6.1.
+This book documents `ooxmlsdk` 0.7.0. Unless a page explicitly names another version, descriptions and examples in this book should be read as applying to 0.7.0.
 
 Project links:
 
