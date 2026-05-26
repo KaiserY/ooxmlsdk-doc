@@ -30,19 +30,10 @@ In a complete package, the new slide should also have a slide layout relationshi
 
 ## Rust workflow
 
-Before inserting, inspect the current slide count and available layouts:
+Create a slide part, optionally reuse an existing layout relationship, and insert a new slide id at the requested position:
 
 ```rust
-{{#include ../../listings/presentation/src/lib.rs:count_slides}}
+{{#include ../../listings/presentation/src/lib.rs:insert_new_slide}}
 ```
 
-`ooxmlsdk` exposes the package graph and generated part types, but this chapter does not yet publish an insertion writer. A tested example must verify:
-
-- new slide part creation,
-- relationship id allocation,
-- slide id allocation,
-- layout relationship creation,
-- insertion order,
-- saved package compatibility.
-
-For practical implementations, copy an existing slide and adjust its content before attempting a fully from-scratch slide.
+For rich layouts, copy an existing slide and adjust its content before attempting a fully from-scratch slide. The example above creates a simple title slide and keeps the package graph consistent with the presentation slide list.

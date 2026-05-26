@@ -244,6 +244,134 @@ pub fn change_first_shape_fill_color(
 }
 // ANCHOR_END: change_first_shape_fill_color
 
+// ANCHOR: insert_new_slide
+pub fn insert_new_slide(
+  path: &Path,
+  insertion_index: usize,
+  title: &str,
+) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = PresentationDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let presentation_part = document.presentation_part()?;
+  let slide_count = presentation_part.slide_parts(&document).count();
+  if insertion_index > slide_count {
+    return Err("insertion index out of range".into());
+  }
+
+  let layout_part = presentation_part
+    .slide_parts(&document)
+    .find_map(|slide| slide.slide_layout_part(&document));
+  let slide_part = presentation_part.add_new_part_auto_id::<_, SlidePart>(&mut document)?;
+  if let Some(layout_part) = layout_part {
+    slide_part.create_relationship_to_part(&mut document, layout_part)?;
+  }
+  slide_part.set_data(&mut document, slide_xml(title).into_bytes())?;
+  let relationship_id = presentation_part
+    .get_id_of_part(&document, &slide_part)
+    .expect("slide relationship id")
+    .to_string();
+  let presentation_xml = presentation_part
+    .data_as_str(&document)?
+    .unwrap_or_default();
+  let updated_xml = insert_slide_id(presentation_xml, insertion_index, &relationship_id)?;
+
+  presentation_part.set_data(&mut document, updated_xml.into_bytes())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: insert_new_slide
+
+// ANCHOR: delete_slide
+pub fn delete_slide(
+  path: &Path,
+  slide_index: usize,
+) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = PresentationDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let presentation_part = document.presentation_part()?;
+  let slides: Vec<_> = presentation_part.slide_parts(&document).collect();
+  let Some(slide_part) = slides.get(slide_index).cloned() else {
+    return Err("slide index out of range".into());
+  };
+  let presentation_xml = presentation_part
+    .data_as_str(&document)?
+    .unwrap_or_default();
+  let updated_xml = remove_slide_id(presentation_xml, slide_index)?;
+
+  presentation_part.delete_part(&mut document, slide_part)?;
+  presentation_part.set_data(&mut document, updated_xml.into_bytes())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: delete_slide
+
+// ANCHOR: add_video_to_slide
+pub fn add_video_to_slide(
+  path: &Path,
+  slide_index: usize,
+  video_bytes: &[u8],
+) -> Result<(Vec<u8>, String, String), Box<dyn std::error::Error>> {
+  let mut document = PresentationDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let presentation_part = document.presentation_part()?;
+  let Some(slide_part) = presentation_part.slide_parts(&document).nth(slide_index) else {
+    return Err("slide index out of range".into());
+  };
+
+  let media_part = document.create_media_data_part_by_type(MediaDataPartType::Mp4)?;
+  media_part.set_data(&mut document, video_bytes.to_vec())?;
+  let video_relationship_id =
+    slide_part.add_video_reference_relationship(&mut document, &media_part)?;
+  let media_relationship_id =
+    slide_part.add_media_reference_relationship(&mut document, &media_part)?;
+  let slide_xml = slide_part.data_as_str(&document)?.unwrap_or_default();
+  let updated_xml =
+    insert_video_picture(slide_xml, &video_relationship_id, &media_relationship_id)?;
+  slide_part.set_data(&mut document, updated_xml.into_bytes())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok((
+    buffer.into_inner(),
+    video_relationship_id,
+    media_relationship_id,
+  ))
+}
+// ANCHOR_END: add_video_to_slide
+
+// ANCHOR: move_first_paragraph_between_presentations
+pub fn move_first_paragraph_between_presentations(
+  source_path: &Path,
+  target_path: &Path,
+) -> Result<(Vec<u8>, Vec<u8>), Box<dyn std::error::Error>> {
+  let mut source = PresentationDocument::new_from_file_with_settings(source_path, lazy_settings())?;
+  let mut target = PresentationDocument::new_from_file_with_settings(target_path, lazy_settings())?;
+  let source_presentation_part = source.presentation_part()?;
+  let target_presentation_part = target.presentation_part()?;
+  let Some(source_slide_part) = source_presentation_part.slide_parts(&source).next() else {
+    return Err("source presentation has no slides".into());
+  };
+  let Some(target_slide_part) = target_presentation_part.slide_parts(&target).next() else {
+    return Err("target presentation has no slides".into());
+  };
+
+  let source_xml = source_slide_part.data_as_str(&source)?.unwrap_or_default();
+  let (updated_source_xml, paragraph_xml) = remove_first_drawing_paragraph(source_xml)?;
+  source_slide_part.set_data(&mut source, updated_source_xml.into_bytes())?;
+
+  let target_xml = target_slide_part.data_as_str(&target)?.unwrap_or_default();
+  let updated_target_xml = append_drawing_paragraph(target_xml, &paragraph_xml)?;
+  target_slide_part.set_data(&mut target, updated_target_xml.into_bytes())?;
+
+  let mut source_buffer = Cursor::new(Vec::new());
+  source.save(&mut source_buffer)?;
+  let mut target_buffer = Cursor::new(Vec::new());
+  target.save(&mut target_buffer)?;
+  Ok((source_buffer.into_inner(), target_buffer.into_inner()))
+}
+// ANCHOR_END: move_first_paragraph_between_presentations
+
 fn lazy_settings() -> OpenSettings {
   OpenSettings {
     open_mode: PackageOpenMode::Lazy,
@@ -410,6 +538,156 @@ fn set_first_shape_solid_fill(
   updated.push_str(&updated_shape);
   updated.push_str(&slide_xml[shape_end..]);
   Ok(updated)
+}
+
+fn slide_xml(title: &str) -> String {
+  let title = escape_xml_text(title);
+  format!(
+    r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+  <p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/><p:sp><p:nvSpPr><p:cNvPr id="2" name="Title 1"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:txBody><a:p><a:r><a:t>{title}</a:t></a:r></a:p></p:txBody></p:sp></p:spTree></p:cSld>
+</p:sld>"#
+  )
+}
+
+fn escape_xml_text(value: &str) -> String {
+  value
+    .replace('&', "&amp;")
+    .replace('<', "&lt;")
+    .replace('>', "&gt;")
+}
+
+fn insert_slide_id(
+  presentation_xml: &str,
+  insertion_index: usize,
+  relationship_id: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+  let Some((content_start, list_end, slide_ids)) = slide_id_list(presentation_xml) else {
+    return Err("presentation has no slide id list".into());
+  };
+  if insertion_index > slide_ids.len() {
+    return Err("insertion index out of range".into());
+  }
+  let next_id = max_slide_id(&slide_ids) + 1;
+  let mut updated_ids = slide_ids;
+  updated_ids.insert(
+    insertion_index,
+    format!(r#"<p:sldId id="{next_id}" r:id="{relationship_id}"/>"#),
+  );
+
+  let mut updated = String::with_capacity(presentation_xml.len() + relationship_id.len() + 32);
+  updated.push_str(&presentation_xml[..content_start]);
+  updated.push_str(&updated_ids.join(""));
+  updated.push_str(&presentation_xml[list_end..]);
+  Ok(updated)
+}
+
+fn remove_slide_id(
+  presentation_xml: &str,
+  slide_index: usize,
+) -> Result<String, Box<dyn std::error::Error>> {
+  let Some((content_start, list_end, mut slide_ids)) = slide_id_list(presentation_xml) else {
+    return Err("presentation has no slide id list".into());
+  };
+  if slide_index >= slide_ids.len() {
+    return Err("slide index out of range".into());
+  }
+  slide_ids.remove(slide_index);
+
+  let mut updated = String::with_capacity(presentation_xml.len());
+  updated.push_str(&presentation_xml[..content_start]);
+  updated.push_str(&slide_ids.join(""));
+  updated.push_str(&presentation_xml[list_end..]);
+  Ok(updated)
+}
+
+fn slide_id_list(presentation_xml: &str) -> Option<(usize, usize, Vec<String>)> {
+  let list_start = presentation_xml.find("<p:sldIdLst>")?;
+  let content_start = list_start + "<p:sldIdLst>".len();
+  let list_end = presentation_xml[content_start..].find("</p:sldIdLst>")? + content_start;
+  let slide_ids =
+    collect_self_closing_elements(&presentation_xml[content_start..list_end], "<p:sldId");
+  Some((content_start, list_end, slide_ids))
+}
+
+fn max_slide_id(slide_ids: &[String]) -> u32 {
+  slide_ids
+    .iter()
+    .filter_map(|slide_id| {
+      let tag_end = slide_id.find('>')?;
+      extract_attr(&slide_id[..tag_end], "id")?
+        .parse::<u32>()
+        .ok()
+    })
+    .max()
+    .unwrap_or(255)
+}
+
+fn insert_video_picture(
+  slide_xml: &str,
+  video_relationship_id: &str,
+  media_relationship_id: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+  let Some(insert_at) = slide_xml.find("</p:spTree>") else {
+    return Err("slide has no shape tree".into());
+  };
+  let video_relationship_id = escape_xml_attr(video_relationship_id);
+  let media_relationship_id = escape_xml_attr(media_relationship_id);
+  let picture = format!(
+    r#"<p:pic><p:nvPicPr><p:cNvPr id="7" name="Video 1"><a:hlinkClick r:id="{media_relationship_id}" action="ppaction://media"/></p:cNvPr><p:cNvPicPr/><p:nvPr><a:videoFile r:link="{video_relationship_id}"/></p:nvPr></p:nvPicPr><p:blipFill><a:blip r:embed="{media_relationship_id}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="914400" y="914400"/><a:ext cx="3657600" cy="2057400"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>"#
+  );
+  let mut updated = String::with_capacity(slide_xml.len() + picture.len());
+  updated.push_str(&slide_xml[..insert_at]);
+  updated.push_str(&picture);
+  updated.push_str(&slide_xml[insert_at..]);
+  Ok(updated)
+}
+
+fn escape_xml_attr(value: &str) -> String {
+  escape_xml_text(value).replace('"', "&quot;")
+}
+
+fn remove_first_drawing_paragraph(
+  slide_xml: &str,
+) -> Result<(String, String), Box<dyn std::error::Error>> {
+  let Some((start, end)) = first_drawing_paragraph_range(slide_xml) else {
+    return Err("source slide has no drawing paragraph".into());
+  };
+  let paragraph = slide_xml[start..end].to_string();
+  let mut updated = String::with_capacity(slide_xml.len());
+  updated.push_str(&slide_xml[..start]);
+  updated.push_str("<a:p/>");
+  updated.push_str(&slide_xml[end..]);
+  Ok((updated, paragraph))
+}
+
+fn append_drawing_paragraph(
+  slide_xml: &str,
+  paragraph_xml: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+  let Some(body_start) = slide_xml.find("<p:txBody>") else {
+    return Err("target slide has no text body".into());
+  };
+  let body_content_start = body_start + "<p:txBody>".len();
+  let Some(body_end) = slide_xml[body_content_start..].find("</p:txBody>") else {
+    return Err("target text body is not closed".into());
+  };
+  let insert_at = body_content_start + body_end;
+  let mut updated = String::with_capacity(slide_xml.len() + paragraph_xml.len());
+  updated.push_str(&slide_xml[..insert_at]);
+  updated.push_str(paragraph_xml);
+  updated.push_str(&slide_xml[insert_at..]);
+  Ok(updated)
+}
+
+fn first_drawing_paragraph_range(slide_xml: &str) -> Option<(usize, usize)> {
+  let start = slide_xml.find("<a:p")?;
+  let open_end = slide_xml[start..].find('>')? + start + 1;
+  if slide_xml[open_end - 2..open_end].starts_with('/') {
+    return Some((start, open_end));
+  }
+  let end = slide_xml[open_end..].find("</a:p>")? + open_end + "</a:p>".len();
+  Some((start, end))
 }
 
 fn collect_self_closing_elements(xml: &str, start_pattern: &str) -> Vec<String> {
@@ -635,6 +913,120 @@ mod tests {
     );
   }
 
+  #[test]
+  fn inserts_new_slide_at_position() {
+    let fixture = write_presentation_fixture();
+
+    let bytes = insert_new_slide(&fixture, 1, "Inserted & Reviewed").expect("insert slide");
+
+    let reopened = PresentationDocument::new(Cursor::new(bytes)).expect("reopen presentation");
+    let presentation_part = reopened.presentation_part().expect("presentation part");
+    let presentation_xml = presentation_part
+      .data_as_str(&reopened)
+      .expect("presentation xml")
+      .expect("presentation data");
+    let titles = get_titles_from_document(&reopened).expect("titles");
+    let first = presentation_xml
+      .find(r#"id="256""#)
+      .expect("first slide id");
+    let inserted = presentation_xml
+      .find(r#"id="258""#)
+      .expect("inserted slide id");
+    let last = presentation_xml
+      .find(r#"id="257""#)
+      .expect("second slide id");
+
+    assert!(first < inserted);
+    assert!(inserted < last);
+    assert!(titles.contains(&"Inserted & Reviewed".to_string()));
+    assert_eq!(presentation_part.slide_parts(&reopened).count(), 3);
+  }
+
+  #[test]
+  fn deletes_slide_by_index() {
+    let fixture = write_presentation_fixture();
+
+    let bytes = delete_slide(&fixture, 1).expect("delete slide");
+
+    let reopened = PresentationDocument::new(Cursor::new(bytes)).expect("reopen presentation");
+    let presentation_part = reopened.presentation_part().expect("presentation part");
+    let titles = get_titles_from_document(&reopened).expect("titles");
+    let presentation_xml = presentation_part
+      .data_as_str(&reopened)
+      .expect("presentation xml")
+      .expect("presentation data");
+
+    assert_eq!(titles, vec!["Intro"]);
+    assert_eq!(presentation_part.slide_parts(&reopened).count(), 1);
+    assert!(!presentation_xml.contains(r#"id="257""#));
+    assert!(!presentation_xml.contains(r#"r:id="rId2""#));
+  }
+
+  #[test]
+  fn adds_video_to_slide() {
+    let fixture = write_presentation_fixture();
+    let video_bytes = b"mp4 video bytes";
+
+    let (bytes, video_relationship_id, media_relationship_id) =
+      add_video_to_slide(&fixture, 0, video_bytes).expect("add video");
+
+    let reopened = PresentationDocument::new(Cursor::new(bytes)).expect("reopen presentation");
+    let presentation_part = reopened.presentation_part().expect("presentation part");
+    let slide_part = presentation_part
+      .slide_parts(&reopened)
+      .next()
+      .expect("first slide");
+    let slide_xml = slide_part
+      .data_as_str(&reopened)
+      .expect("slide xml")
+      .expect("slide data");
+    let media_parts: Vec<_> = reopened.media_data_parts().collect();
+
+    assert_eq!(media_parts.len(), 1);
+    assert_eq!(media_parts[0].content_type(&reopened), Some("video/mp4"));
+    assert_eq!(media_parts[0].data(&reopened), Some(video_bytes.as_slice()));
+    assert!(slide_xml.contains(&format!(r#"a:videoFile r:link="{video_relationship_id}""#)));
+    assert!(slide_xml.contains(&format!(r#"a:hlinkClick r:id="{media_relationship_id}""#)));
+    assert!(
+      slide_part
+        .data_part_reference_relationships(&reopened)
+        .any(|relationship| relationship.id() == video_relationship_id)
+    );
+    assert!(
+      slide_part
+        .data_part_reference_relationships(&reopened)
+        .any(|relationship| relationship.id() == media_relationship_id)
+    );
+  }
+
+  #[test]
+  fn moves_first_paragraph_between_presentations() {
+    let source_fixture = write_presentation_fixture();
+    let target_fixture = write_presentation_fixture();
+
+    let (source_bytes, target_bytes) =
+      move_first_paragraph_between_presentations(&source_fixture, &target_fixture)
+        .expect("move paragraph");
+
+    let source = PresentationDocument::new(Cursor::new(source_bytes)).expect("reopen source");
+    let target = PresentationDocument::new(Cursor::new(target_bytes)).expect("reopen target");
+    let source_titles = get_titles_from_document(&source).expect("source titles");
+    let target_part = target
+      .presentation_part()
+      .expect("target presentation part");
+    let first_target_slide = target_part
+      .slide_parts(&target)
+      .next()
+      .expect("target slide");
+    let target_xml = first_target_slide
+      .data_as_str(&target)
+      .expect("target slide xml")
+      .expect("target slide data");
+
+    assert_eq!(source_titles[0], "Hello from slide 1");
+    assert!(target_xml.matches("<a:t>Intro</a:t>").count() >= 2);
+  }
+
   fn write_presentation_fixture() -> std::path::PathBuf {
     let path = std::env::temp_dir().join(format!(
       "ooxmlsdk-doc-presentation-{}-{}.pptx",
@@ -758,6 +1150,23 @@ mod tests {
 
     zip.finish().expect("finish fixture");
     path
+  }
+
+  fn get_titles_from_document(
+    document: &PresentationDocument,
+  ) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+    let presentation_part = document.presentation_part()?;
+    let mut titles = Vec::new();
+    for slide_part in presentation_part.slide_parts(document) {
+      let xml = slide_part.data_as_str(document)?.unwrap_or_default();
+      titles.push(
+        extract_drawing_text(xml)
+          .into_iter()
+          .next()
+          .unwrap_or_default(),
+      );
+    }
+    Ok(titles)
   }
 
   fn write_slide<W: std::io::Write + std::io::Seek>(

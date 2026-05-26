@@ -32,10 +32,10 @@ More complex presentations can have additional references, such as outline view 
 
 ## Rust workflow
 
-Use read-only traversal to identify the target slide before writing:
+Remove the slide id entry and delete the related slide part from the presentation part:
 
 ```rust
-{{#include ../../listings/presentation/src/lib.rs:count_slides}}
+{{#include ../../listings/presentation/src/lib.rs:delete_slide}}
 ```
 
-This chapter does not yet include a tested deletion writer for `ooxmlsdk`. A final example should cover visible and hidden slides, custom shows, notes slides, comments, media, and relationship cleanup.
+For presentations that use custom shows, notes, comments, or slide-specific media, delete or rewrite those related resources before saving. The example above covers the primary presentation slide list and slide part relationship.

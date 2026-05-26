@@ -30,10 +30,10 @@ The upstream sample opens both presentations, gets the first slide from each, fi
 
 ## Rust workflow
 
-Use `ooxmlsdk` to read text from the source and target slide parts:
+Move the first plain DrawingML paragraph from the first source slide into the first target slide:
 
 ```rust
-{{#include ../../listings/presentation/src/lib.rs:get_slide_text}}
+{{#include ../../listings/presentation/src/lib.rs:move_first_paragraph_between_presentations}}
 ```
 
-This chapter does not yet publish a paragraph mover because a correct writer must preserve XML namespaces, relationships, and run properties. The first tested version should start with plain text paragraphs, then expand coverage to hyperlinks and rich formatting.
+This example handles plain text paragraphs. If the paragraph contains hyperlinks, media, embedded objects, comments, or custom extension data, copy the referenced relationships and parts into the target package before saving.

@@ -37,19 +37,10 @@ The full insertion shape normally includes:
 
 ## Rust workflow
 
-Start by navigating to the target slide through the presentation part:
+Create an MP4 media data part, add video and media reference relationships from the target slide, and insert the video picture markup:
 
 ```rust
-{{#include ../../listings/presentation/src/lib.rs:get_slide_text}}
+{{#include ../../listings/presentation/src/lib.rs:add_video_to_slide}}
 ```
 
-`ooxmlsdk` has tested low-level package support for media data parts and reference relationships; the audio chapter shows the same package pattern with `create_media_data_part_by_type` and slide-level media references. This page does not yet publish a video writer because video insertion needs a fixture that covers:
-
-- video media bytes and content type,
-- slide video reference relationship,
-- media reference relationship,
-- preview image relationship,
-- `<a:videoFile/>`, picture, and timing XML,
-- round-trip save validation.
-
-Keep any implementation in `listings/` with a fixture before documenting the final API.
+For production presentations, add a preview image and timing tree entries if the target application requires them. The example above covers the package media part, video relationship, media relationship, and slide-level `a:videoFile` markup.
