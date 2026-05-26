@@ -2,8 +2,10 @@
 use std::io::Cursor;
 use std::path::Path;
 
+use ooxmlsdk::parts::comment_authors_part::CommentAuthorsPart;
 use ooxmlsdk::parts::presentation_document::PresentationDocument;
 use ooxmlsdk::parts::presentation_part::PresentationPart;
+use ooxmlsdk::parts::slide_comments_part::SlideCommentsPart;
 use ooxmlsdk::parts::slide_part::SlidePart;
 use ooxmlsdk::sdk::MediaDataPartType;
 use ooxmlsdk::sdk::{OpenSettings, PackageOpenMode, PresentationDocumentType};
@@ -57,7 +59,8 @@ pub fn count_slides(
   }
 
   let mut count = 0;
-  for slide_part in presentation_part.slide_parts(&document) {
+  let slide_parts: Vec<_> = presentation_part.slide_parts(&document).collect();
+  for slide_part in slide_parts {
     let xml = slide_part.data_as_str(&document)?.unwrap_or_default();
     if !xml.contains(r#"show="0""#) && !xml.contains(r#"show="false""#) {
       count += 1;
@@ -89,7 +92,8 @@ pub fn get_all_slide_text(path: &Path) -> Result<Vec<Vec<String>>, Box<dyn std::
   let presentation_part = document.presentation_part()?;
   let mut slides = Vec::new();
 
-  for slide_part in presentation_part.slide_parts(&document) {
+  let slide_parts: Vec<_> = presentation_part.slide_parts(&document).collect();
+  for slide_part in slide_parts {
     let xml = slide_part.data_as_str(&document)?.unwrap_or_default();
     slides.push(extract_drawing_text(xml));
   }
@@ -371,6 +375,105 @@ pub fn move_first_paragraph_between_presentations(
   Ok((source_buffer.into_inner(), target_buffer.into_inner()))
 }
 // ANCHOR_END: move_first_paragraph_between_presentations
+
+// ANCHOR: add_comment_to_slide
+pub fn add_comment_to_slide(
+  path: &Path,
+  slide_index: usize,
+  author_name: &str,
+  initials: &str,
+  text: &str,
+) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = PresentationDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let presentation_part = document.presentation_part()?;
+  let authors_part = if let Some(part) = presentation_part.comment_authors_part(&document) {
+    part
+  } else {
+    presentation_part.add_new_part_auto_id::<_, CommentAuthorsPart>(&mut document)?
+  };
+  let authors_xml = authors_part
+    .data_as_str(&document)?
+    .map(str::to_string)
+    .filter(|xml| !xml.trim().is_empty())
+    .unwrap_or_else(empty_comment_authors_xml);
+  let (updated_authors_xml, author_id, comment_index) =
+    upsert_comment_author(&authors_xml, author_name, initials)?;
+  authors_part.set_data(&mut document, updated_authors_xml.into_bytes())?;
+
+  let Some(slide_part) = presentation_part.slide_parts(&document).nth(slide_index) else {
+    return Err("slide index out of range".into());
+  };
+  let comments_part = if let Some(part) = slide_part.slide_comments_part(&document) {
+    part
+  } else {
+    slide_part.add_new_part_auto_id::<_, SlideCommentsPart>(&mut document)?
+  };
+  let comments_xml = comments_part
+    .data_as_str(&document)?
+    .map(str::to_string)
+    .filter(|xml| !xml.trim().is_empty())
+    .unwrap_or_else(empty_slide_comments_xml);
+  let updated_comments_xml = append_slide_comment(&comments_xml, author_id, comment_index, text)?;
+  comments_part.set_data(&mut document, updated_comments_xml.into_bytes())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: add_comment_to_slide
+
+// ANCHOR: delete_comments_by_author
+pub fn delete_comments_by_author(
+  path: &Path,
+  author_name: &str,
+) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = PresentationDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let presentation_part = document.presentation_part()?;
+  let Some(authors_part) = presentation_part.comment_authors_part(&document) else {
+    let mut buffer = Cursor::new(Vec::new());
+    document.save(&mut buffer)?;
+    return Ok(buffer.into_inner());
+  };
+  let authors_xml = authors_part.data_as_str(&document)?.unwrap_or_default();
+  let author_ids = comment_author_ids_by_name(authors_xml, author_name);
+  let updated_authors_xml = remove_comment_authors_by_id(authors_xml, &author_ids);
+  authors_part.set_data(&mut document, updated_authors_xml.into_bytes())?;
+
+  let slide_parts: Vec<_> = presentation_part.slide_parts(&document).collect();
+  for slide_part in slide_parts {
+    let Some(comments_part) = slide_part.slide_comments_part(&document) else {
+      continue;
+    };
+    let comments_xml = comments_part.data_as_str(&document)?.unwrap_or_default();
+    let updated_comments_xml = remove_slide_comments_by_author_id(comments_xml, &author_ids);
+    comments_part.set_data(&mut document, updated_comments_xml.into_bytes())?;
+  }
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: delete_comments_by_author
+
+// ANCHOR: add_basic_animation_timing
+pub fn add_basic_animation_timing(
+  path: &Path,
+  slide_index: usize,
+) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = PresentationDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let presentation_part = document.presentation_part()?;
+  let Some(slide_part) = presentation_part.slide_parts(&document).nth(slide_index) else {
+    return Err("slide index out of range".into());
+  };
+  let slide_xml = slide_part.data_as_str(&document)?.unwrap_or_default();
+  let updated_xml = replace_or_insert_timing(slide_xml, basic_timing_xml())?;
+  slide_part.set_data(&mut document, updated_xml.into_bytes())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: add_basic_animation_timing
 
 fn lazy_settings() -> OpenSettings {
   OpenSettings {
@@ -688,6 +791,238 @@ fn first_drawing_paragraph_range(slide_xml: &str) -> Option<(usize, usize)> {
   }
   let end = slide_xml[open_end..].find("</a:p>")? + open_end + "</a:p>".len();
   Some((start, end))
+}
+
+fn empty_comment_authors_xml() -> String {
+  r#"<p:cmAuthorLst xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"></p:cmAuthorLst>"#
+    .to_string()
+}
+
+fn empty_slide_comments_xml() -> String {
+  r#"<p:cmLst xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"></p:cmLst>"#
+    .to_string()
+}
+
+fn upsert_comment_author(
+  authors_xml: &str,
+  author_name: &str,
+  initials: &str,
+) -> Result<(String, u32, u32), Box<dyn std::error::Error>> {
+  if let Some((start, end, tag, author_id, last_index)) =
+    find_comment_author(authors_xml, author_name, initials)
+  {
+    let next_index = last_index + 1;
+    let updated_tag = set_or_add_attr(tag, "lastIdx", &next_index.to_string());
+    let mut updated = String::with_capacity(authors_xml.len() + updated_tag.len());
+    updated.push_str(&authors_xml[..start]);
+    updated.push_str(&updated_tag);
+    updated.push_str(&authors_xml[end..]);
+    return Ok((updated, author_id, next_index));
+  }
+
+  let Some(insert_at) = authors_xml.find("</p:cmAuthorLst>") else {
+    return Err("comment author list root not found".into());
+  };
+  let author_id = max_comment_author_id(authors_xml) + 1;
+  let author_name = escape_xml_attr(author_name);
+  let initials = escape_xml_attr(initials);
+  let author_xml = format!(
+    r#"<p:cmAuthor id="{author_id}" name="{author_name}" initials="{initials}" lastIdx="1" clrIdx="0"/>"#
+  );
+  let mut updated = String::with_capacity(authors_xml.len() + author_xml.len());
+  updated.push_str(&authors_xml[..insert_at]);
+  updated.push_str(&author_xml);
+  updated.push_str(&authors_xml[insert_at..]);
+  Ok((updated, author_id, 1))
+}
+
+fn append_slide_comment(
+  comments_xml: &str,
+  author_id: u32,
+  comment_index: u32,
+  text: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+  let Some(insert_at) = comments_xml.find("</p:cmLst>") else {
+    return Err("comment list root not found".into());
+  };
+  let text = escape_xml_text(text);
+  let comment_xml = format!(
+    r#"<p:cm authorId="{author_id}" dt="2026-05-26T00:00:00Z" idx="{comment_index}"><p:pos x="10" y="20"/><p:text>{text}</p:text></p:cm>"#
+  );
+  let mut updated = String::with_capacity(comments_xml.len() + comment_xml.len());
+  updated.push_str(&comments_xml[..insert_at]);
+  updated.push_str(&comment_xml);
+  updated.push_str(&comments_xml[insert_at..]);
+  Ok(updated)
+}
+
+fn find_comment_author<'a>(
+  authors_xml: &'a str,
+  author_name: &str,
+  initials: &str,
+) -> Option<(usize, usize, &'a str, u32, u32)> {
+  let mut base = 0;
+  let mut rest = authors_xml;
+  while let Some(offset) = rest.find("<p:cmAuthor ") {
+    let start = base + offset;
+    let author_rest = &authors_xml[start..];
+    let end = author_rest.find('>')? + start + 1;
+    let tag = &authors_xml[start..end];
+    if extract_attr(tag, "name") == Some(author_name)
+      && extract_attr(tag, "initials") == Some(initials)
+    {
+      let author_id = extract_attr(tag, "id")?.parse().ok()?;
+      let last_index = extract_attr(tag, "lastIdx")
+        .and_then(|value| value.parse().ok())
+        .unwrap_or(0);
+      return Some((start, end, tag, author_id, last_index));
+    }
+    base = end;
+    rest = &authors_xml[base..];
+  }
+  None
+}
+
+fn max_comment_author_id(authors_xml: &str) -> u32 {
+  let mut max_id = 0;
+  let mut rest = authors_xml;
+  while let Some(start) = rest.find("<p:cmAuthor ") {
+    rest = &rest[start..];
+    let Some(tag_end) = rest.find('>') else {
+      break;
+    };
+    if let Some(id) = extract_attr(&rest[..tag_end], "id").and_then(|value| value.parse().ok()) {
+      max_id = max_id.max(id);
+    }
+    rest = &rest[tag_end + 1..];
+  }
+  max_id
+}
+
+fn comment_author_ids_by_name(authors_xml: &str, author_name: &str) -> Vec<String> {
+  let mut ids = Vec::new();
+  let mut rest = authors_xml;
+  while let Some(start) = rest.find("<p:cmAuthor ") {
+    rest = &rest[start..];
+    let Some(tag_end) = rest.find('>') else {
+      break;
+    };
+    let tag = &rest[..tag_end];
+    if extract_attr(tag, "name") == Some(author_name)
+      && let Some(id) = extract_attr(tag, "id")
+    {
+      ids.push(id.to_string());
+    }
+    rest = &rest[tag_end + 1..];
+  }
+  ids
+}
+
+fn remove_comment_authors_by_id(authors_xml: &str, ids: &[String]) -> String {
+  remove_elements_by_attr(authors_xml, "<p:cmAuthor ", "id", ids)
+}
+
+fn remove_slide_comments_by_author_id(comments_xml: &str, ids: &[String]) -> String {
+  remove_paired_elements_by_attr(comments_xml, "<p:cm ", "</p:cm>", "authorId", ids)
+}
+
+fn remove_elements_by_attr(
+  xml: &str,
+  start_pattern: &str,
+  attr_name: &str,
+  ids: &[String],
+) -> String {
+  let mut output = String::with_capacity(xml.len());
+  let mut rest = xml;
+  while let Some(start) = rest.find(start_pattern) {
+    output.push_str(&rest[..start]);
+    let element_rest = &rest[start..];
+    let Some(open_end) = element_rest.find('>') else {
+      output.push_str(element_rest);
+      return output;
+    };
+    let tag = &element_rest[..open_end];
+    if extract_attr(tag, attr_name).is_some_and(|id| ids.iter().any(|value| value == id)) {
+      rest = &element_rest[open_end + 1..];
+    } else {
+      output.push_str(&element_rest[..open_end + 1]);
+      rest = &element_rest[open_end + 1..];
+    }
+  }
+  output.push_str(rest);
+  output
+}
+
+fn remove_paired_elements_by_attr(
+  xml: &str,
+  start_pattern: &str,
+  end_pattern: &str,
+  attr_name: &str,
+  ids: &[String],
+) -> String {
+  let mut output = String::with_capacity(xml.len());
+  let mut rest = xml;
+  while let Some(start) = rest.find(start_pattern) {
+    output.push_str(&rest[..start]);
+    let element_rest = &rest[start..];
+    let Some(open_end) = element_rest.find('>') else {
+      output.push_str(element_rest);
+      return output;
+    };
+    let Some(close_start) = element_rest[open_end + 1..].find(end_pattern) else {
+      output.push_str(element_rest);
+      return output;
+    };
+    let element_end = open_end + 1 + close_start + end_pattern.len();
+    let tag = &element_rest[..open_end];
+    if extract_attr(tag, attr_name).is_some_and(|id| ids.iter().any(|value| value == id)) {
+      rest = &element_rest[element_end..];
+    } else {
+      output.push_str(&element_rest[..element_end]);
+      rest = &element_rest[element_end..];
+    }
+  }
+  output.push_str(rest);
+  output
+}
+
+fn replace_or_insert_timing(
+  slide_xml: &str,
+  timing_xml: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+  if let Some((start, end)) = find_element_range(slide_xml, "<p:timing", "</p:timing>") {
+    let mut updated = String::with_capacity(slide_xml.len() + timing_xml.len());
+    updated.push_str(&slide_xml[..start]);
+    updated.push_str(timing_xml);
+    updated.push_str(&slide_xml[end..]);
+    return Ok(updated);
+  }
+
+  let insert_at = slide_xml.find("</p:sld>").ok_or("slide root not found")?;
+  let mut updated = String::with_capacity(slide_xml.len() + timing_xml.len());
+  updated.push_str(&slide_xml[..insert_at]);
+  updated.push_str(timing_xml);
+  updated.push_str(&slide_xml[insert_at..]);
+  Ok(updated)
+}
+
+fn basic_timing_xml() -> &'static str {
+  r#"<p:timing><p:tnLst><p:par><p:cTn id="1" dur="indefinite" restart="never"><p:childTnLst><p:par><p:cTn id="2" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst><p:anim calcmode="lin" valueType="num"><p:cBhvr><p:cTn id="3" dur="500"/><p:tgtEl><p:spTgt spid="2"/></p:tgtEl><p:attrNameLst><p:attrName>style.opacity</p:attrName></p:attrNameLst></p:cBhvr><p:tavLst><p:tav tm="0"><p:val><p:fltVal val="0"/></p:val></p:tav><p:tav tm="100000"><p:val><p:fltVal val="1"/></p:val></p:tav></p:tavLst></p:anim></p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:par></p:tnLst></p:timing>"#
+}
+
+fn set_or_add_attr(tag: &str, name: &str, value: &str) -> String {
+  if let Some(attr_start) = tag.find(&format!(r#"{name}=""#)) {
+    let value_start = attr_start + name.len() + 2;
+    if let Some(value_end) = tag[value_start..].find('"') {
+      let value_end = value_start + value_end;
+      let mut updated = String::with_capacity(tag.len() + value.len());
+      updated.push_str(&tag[..value_start]);
+      updated.push_str(value);
+      updated.push_str(&tag[value_end..]);
+      return updated;
+    }
+  }
+  tag.replacen("/>", &format!(r#" {name}="{value}"/>"#), 1)
 }
 
 fn collect_self_closing_elements(xml: &str, start_pattern: &str) -> Vec<String> {
@@ -1027,6 +1362,100 @@ mod tests {
     assert!(target_xml.matches("<a:t>Intro</a:t>").count() >= 2);
   }
 
+  #[test]
+  fn adds_comment_to_slide() {
+    let fixture = write_presentation_fixture();
+
+    let bytes =
+      add_comment_to_slide(&fixture, 0, "Ada", "AL", "Review this slide").expect("add comment");
+
+    let reopened = PresentationDocument::new(Cursor::new(bytes)).expect("reopen presentation");
+    let presentation_part = reopened.presentation_part().expect("presentation part");
+    let authors_part = presentation_part
+      .comment_authors_part(&reopened)
+      .expect("comment authors part");
+    let authors_xml = authors_part
+      .data_as_str(&reopened)
+      .expect("authors xml")
+      .expect("authors data");
+    let first_slide = presentation_part
+      .slide_parts(&reopened)
+      .next()
+      .expect("first slide");
+    let comments_part = first_slide
+      .slide_comments_part(&reopened)
+      .expect("slide comments part");
+    let comments_xml = comments_part
+      .data_as_str(&reopened)
+      .expect("comments xml")
+      .expect("comments data");
+
+    assert!(authors_xml.contains(r#"<p:cmAuthor id="1" name="Ada" initials="AL" lastIdx="1""#));
+    assert!(comments_xml.contains(r#"<p:cm authorId="1""#));
+    assert!(comments_xml.contains("<p:text>Review this slide</p:text>"));
+  }
+
+  #[test]
+  fn deletes_comments_by_author() {
+    let fixture = write_presentation_fixture();
+    let bytes = add_comment_to_slide(&fixture, 0, "Ada", "AL", "Review this slide")
+      .expect("add first comment");
+    let path = write_bytes_fixture("pptx", bytes);
+    let bytes = add_comment_to_slide(&path, 0, "Grace", "GH", "Keep this comment")
+      .expect("add second comment");
+    let path = write_bytes_fixture("pptx", bytes);
+
+    let bytes = delete_comments_by_author(&path, "Ada").expect("delete comments");
+
+    let reopened = PresentationDocument::new(Cursor::new(bytes)).expect("reopen presentation");
+    let presentation_part = reopened.presentation_part().expect("presentation part");
+    let authors_part = presentation_part
+      .comment_authors_part(&reopened)
+      .expect("comment authors part");
+    let authors_xml = authors_part
+      .data_as_str(&reopened)
+      .expect("authors xml")
+      .expect("authors data");
+    let first_slide = presentation_part
+      .slide_parts(&reopened)
+      .next()
+      .expect("first slide");
+    let comments_part = first_slide
+      .slide_comments_part(&reopened)
+      .expect("slide comments part");
+    let comments_xml = comments_part
+      .data_as_str(&reopened)
+      .expect("comments xml")
+      .expect("comments data");
+
+    assert!(!authors_xml.contains(r#"name="Ada""#));
+    assert!(authors_xml.contains(r#"name="Grace""#));
+    assert!(!comments_xml.contains("Review this slide"));
+    assert!(comments_xml.contains("Keep this comment"));
+  }
+
+  #[test]
+  fn adds_basic_animation_timing() {
+    let fixture = write_presentation_fixture();
+
+    let bytes = add_basic_animation_timing(&fixture, 0).expect("add animation timing");
+
+    let reopened = PresentationDocument::new(Cursor::new(bytes)).expect("reopen presentation");
+    let presentation_part = reopened.presentation_part().expect("presentation part");
+    let first_slide = presentation_part
+      .slide_parts(&reopened)
+      .next()
+      .expect("first slide");
+    let slide_xml = first_slide
+      .data_as_str(&reopened)
+      .expect("slide xml")
+      .expect("slide data");
+
+    assert!(slide_xml.contains("<p:timing>"));
+    assert!(slide_xml.contains(r#"<p:anim calcmode="lin" valueType="num">"#));
+    assert!(slide_xml.contains(r#"<p:spTgt spid="2"/>"#));
+  }
+
   fn write_presentation_fixture() -> std::path::PathBuf {
     let path = std::env::temp_dir().join(format!(
       "ooxmlsdk-doc-presentation-{}-{}.pptx",
@@ -1149,6 +1578,17 @@ mod tests {
       .expect("write slide layout");
 
     zip.finish().expect("finish fixture");
+    path
+  }
+
+  fn write_bytes_fixture(extension: &str, bytes: Vec<u8>) -> std::path::PathBuf {
+    let path = std::env::temp_dir().join(format!(
+      "ooxmlsdk-doc-presentation-bytes-{}-{}.{}",
+      std::process::id(),
+      FIXTURE_COUNTER.fetch_add(1, Ordering::Relaxed),
+      extension
+    ));
+    std::fs::write(&path, bytes).expect("write bytes fixture");
     path
   }
 

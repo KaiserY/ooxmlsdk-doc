@@ -39,21 +39,10 @@ The upstream modern-comments sample follows this package traversal:
 
 ## Rust workflow
 
-Use the presentation part to enumerate slides and locate comment-related parts:
+Match classic comment author entries by name, scan slide comments parts, and remove comments with matching author ids:
 
 ```rust
-{{#include ../../listings/presentation/src/lib.rs:open_presentation_read_only}}
+{{#include ../../listings/presentation/src/lib.rs:delete_comments_by_author}}
 ```
 
-This chapter does not yet publish a deletion writer. A complete tested example should:
-
-- read the author list,
-- match the requested author name to ids,
-- scan every slide comment part,
-- remove only matching comments,
-- preserve unrelated comments and modern comment metadata,
-- remove empty comment parts only after confirming no comments remain,
-- remove author entries only after their comments are gone,
-- save and validate the package.
-
-Until then, treat this as a package traversal task and keep implementation experiments in `listings/` with fixtures.
+Modern threaded comments use different parts and metadata. Apply the same author-id filtering idea there only after adding fixtures for those modern parts.

@@ -38,14 +38,18 @@ The position point is the upper-left point in left-to-right UI layouts and the u
 
 ## Rust workflow
 
-Use package relationships to find the relevant parts. Start with the presentation part for author data, and with each slide part for slide-specific comments.
+Use package relationships to find the relevant parts. Start with the presentation part for author data, and with each slide part for slide-specific comments:
 
 ```rust
-{{#include ../../listings/presentation/src/lib.rs:open_presentation_read_only}}
+{{#include ../../listings/presentation/src/lib.rs:add_comment_to_slide}}
 ```
 
-`ooxmlsdk` exposes the package and part graph, but this chapter does not yet include a tested comment writer. Adding or replying to comments must coordinate comment ids, author ids, slide relationships, and in newer PowerPoint files, modern comment parts. Keep writer examples out of the docs until a fixture covers the whole graph.
+Delete comments by matching author ids from the author list:
+
+```rust
+{{#include ../../listings/presentation/src/lib.rs:delete_comments_by_author}}
+```
 
 ## Practical guidance
 
-For read-only tooling, inspect existing comment parts and author parts. For editing, prefer starting from a real presentation that already contains comments, then make a small schema-aware change and verify that PowerPoint can open the result.
+For read-only tooling, inspect existing comment parts and author parts. For editing modern threaded comments, prefer starting from a real presentation that already contains those comments, then make a small schema-aware change and verify that PowerPoint can open the result.

@@ -19,18 +19,10 @@ The upstream modern-comments sample follows this shape:
 
 ## Rust workflow
 
-Start by opening the presentation and locating the target slide:
+Classic PresentationML comments do not have a reply subtree. For classic comments, add another comment by the reply author and preserve the author/comment ids:
 
 ```rust
-{{#include ../../listings/presentation/src/lib.rs:open_presentation_read_only}}
+{{#include ../../listings/presentation/src/lib.rs:add_comment_to_slide}}
 ```
 
-This chapter does not yet include a tested Rust reply writer for `ooxmlsdk`. Before documenting one, add fixture coverage for:
-
-- presentations with classic comments,
-- presentations with modern threaded comments,
-- author lookup or creation,
-- reply id allocation,
-- round-trip package save.
-
-For the first implementation, prefer modifying a fixture that already contains comments and replies so the package structure is known-good.
+For modern threaded comments, use the modern PowerPoint comment and author parts (`PowerPointCommentPart` and `PowerPointAuthorsPart`) and preserve the threading metadata. Prefer modifying a fixture that already contains a modern comment and reply so the package structure is known-good.

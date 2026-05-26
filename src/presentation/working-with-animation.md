@@ -43,17 +43,10 @@ In `ooxmlsdk`, the corresponding generated types live under `ooxmlsdk::schemas::
 
 ## Rust workflow
 
-`ooxmlsdk` can open the presentation package and read slide part XML. A conservative animation inspection workflow is:
-
-1. Open the `.pptx` with `PresentationDocument`.
-2. Iterate slide parts with `presentation_part.slide_parts(&document)`.
-3. Read each slide with `data_as_str(&document)`.
-4. Parse or inspect the `<p:timing/>` subtree.
-
-Use the slide traversal pattern from the text extraction example:
+Open the target slide part and add or replace a minimal timing tree:
 
 ```rust
-{{#include ../../listings/presentation/src/lib.rs:get_slide_text}}
+{{#include ../../listings/presentation/src/lib.rs:add_basic_animation_timing}}
 ```
 
-This chapter does not yet include a tested animation writer. Animation markup is sensitive to ids and target references, so editing should be added only with a fixture that round-trips through the package model.
+Animation markup is sensitive to ids and target references. The example targets shape id `2` from the simple fixture; in a general writer, discover the target shape id from the slide XML and keep timing node ids unique.

@@ -33,20 +33,12 @@ The package update has these steps:
 
 ## Rust workflow
 
-Navigate from the presentation to the target slide first:
+Create or reuse the classic comment authors part, create or reuse the slide comments part, then append a comment:
 
 ```rust
-{{#include ../../listings/presentation/src/lib.rs:get_slide_text}}
+{{#include ../../listings/presentation/src/lib.rs:add_comment_to_slide}}
 ```
 
-`ooxmlsdk` exposes the package graph needed for comment parts, but this page does not yet publish a writer. A tested comment insertion example must cover:
-
-- creating or finding the comment authors part,
-- creating or finding the slide comment part,
-- assigning author and comment ids,
-- preserving existing comments,
-- saving and validating the package.
-
-Modern PowerPoint comments can also use newer Office extension parts, so this chapter keeps the write path as future fixture-backed work.
+Modern PowerPoint comments can also use newer Office extension parts. Keep modern threaded comments separate from the classic `p:cmLst` path shown above.
 
 When matching author data, use the exact name and initials PowerPoint stores in the file, usually the values from PowerPoint Options under the General tab.

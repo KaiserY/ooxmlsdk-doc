@@ -23,16 +23,12 @@ A cell stores its grid address, style, type, value, metadata, and optional formu
 
 ## Rust workflow
 
-Start by locating the worksheet part:
+Create a worksheet drawing part, add a chart part under it, and reference that drawing from the worksheet:
 
 ```rust
-{{#include ../../listings/spreadsheet/src/lib.rs:get_worksheet_xml}}
+{{#include ../../listings/spreadsheet/src/lib.rs:insert_bar_chart}}
 ```
-
-This chapter does not yet publish a chart writer. A complete implementation must create or update worksheet drawing markup, drawing relationships, chart XML, chart relationships, and content type entries.
 
 The upstream writer sample follows this package flow: verify that the target worksheet exists, add a drawing part to the worksheet, add a chart part under that drawing, create a chart space with editing language metadata, then build a clustered column chart from keyed values. The chart definition needs category and value axes, scaling, axis positions, crossing axis references, tick label position, label alignment, label offset, and legend settings.
 
 After the chart XML is written, the worksheet drawing positions the chart with a `TwoCellAnchor`. The anchor records the starting and ending row/column markers so Excel knows how the chart moves or resizes when worksheet rows and columns change. The graphic frame then references the chart relationship and gives the shape a name such as `Chart 1`.
-
-With `ooxmlsdk` this page stays structural because the documentation set does not yet have a tested chart writer listing. When adding one, keep the writer idempotent or explicitly reject existing chart anchors; the upstream sample was intended to run only once.

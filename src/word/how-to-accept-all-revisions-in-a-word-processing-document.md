@@ -20,12 +20,10 @@ In `ooxmlsdk`, generated schema types for these elements include `ParagraphPrope
 
 ## Rust workflow
 
-Start with the main document XML:
+Accept common revision markup in the main document XML:
 
 ```rust
-{{#include ../../listings/word/src/lib.rs:open_word_read_only}}
+{{#include ../../listings/word/src/lib.rs:accept_common_revisions}}
 ```
 
-This chapter does not yet publish an accept-revisions writer. A complete implementation must handle insertions, deletions, move ranges, formatting changes, comments, and related parts with fixtures for each revision type.
-
-Do not treat revision acceptance as a simple string replacement. Some revisions live in paragraph properties, table row properties, run content, comments, headers, footers, footnotes, or endnotes. A complete writer should apply the same acceptance rules to every story that can contain tracked changes.
+Do not treat revision acceptance as a simple string replacement. Some revisions live in paragraph properties, table row properties, run content, comments, headers, footers, footnotes, or endnotes. Apply the same acceptance rules to every story that can contain tracked changes when you need whole-document acceptance.

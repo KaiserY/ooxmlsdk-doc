@@ -471,6 +471,40 @@ pub fn insert_picture(
 }
 // ANCHOR_END: insert_picture
 
+// ANCHOR: replace_text_in_main_document
+pub fn replace_text_in_main_document(
+  path: &Path,
+  search: &str,
+  replacement: &str,
+) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = WordprocessingDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let main_part = document.main_document_part()?;
+  let document_xml = main_part.data_as_str(&document)?.unwrap_or_default();
+  let updated_xml = replace_text_values(document_xml, search, replacement);
+
+  main_part.set_data(&mut document, updated_xml.into_bytes())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: replace_text_in_main_document
+
+// ANCHOR: accept_common_revisions
+pub fn accept_common_revisions(path: &Path) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = WordprocessingDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let main_part = document.main_document_part()?;
+  let document_xml = main_part.data_as_str(&document)?.unwrap_or_default();
+  let updated_xml = accept_revision_markup(document_xml);
+
+  main_part.set_data(&mut document, updated_xml.into_bytes())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: accept_common_revisions
+
 fn lazy_settings() -> OpenSettings {
   OpenSettings {
     open_mode: PackageOpenMode::Lazy,
@@ -1065,6 +1099,100 @@ fn picture_paragraph_xml(relationship_id: &str, width_emu: u64, height_emu: u64)
   )
 }
 
+fn replace_text_values(document_xml: &str, search: &str, replacement: &str) -> String {
+  let replacement = escape_xml_text(replacement);
+  let mut output = String::with_capacity(document_xml.len());
+  let mut rest = document_xml;
+
+  while let Some(start) = find_text_start(rest) {
+    output.push_str(&rest[..start]);
+    let text_rest = &rest[start..];
+    let Some(open_end) = text_rest.find('>') else {
+      output.push_str(text_rest);
+      return output;
+    };
+    let open_end = open_end + 1;
+    let Some(close_start) = text_rest[open_end..].find("</w:t>") else {
+      output.push_str(text_rest);
+      return output;
+    };
+    let close_start = open_end + close_start;
+    let text = &text_rest[open_end..close_start];
+    output.push_str(&text_rest[..open_end]);
+    output.push_str(&text.replace(search, &replacement));
+    output.push_str("</w:t>");
+    rest = &text_rest[close_start + "</w:t>".len()..];
+  }
+
+  output.push_str(rest);
+  output
+}
+
+fn accept_revision_markup(document_xml: &str) -> String {
+  let mut accepted = document_xml.to_string();
+  accepted = unwrap_all_elements(&accepted, "<w:ins ", "</w:ins>");
+  accepted = unwrap_all_elements(&accepted, "<w:moveTo ", "</w:moveTo>");
+  accepted = remove_all_paired_elements(&accepted, "<w:del ", "</w:del>");
+  accepted = remove_all_paired_elements(&accepted, "<w:moveFrom ", "</w:moveFrom>");
+  accepted = remove_all_paired_elements(&accepted, "<w:pPrChange ", "</w:pPrChange>");
+  accepted = remove_all_paired_elements(&accepted, "<w:rPrChange ", "</w:rPrChange>");
+  accepted = remove_all_elements(&accepted, "<w:moveFromRangeStart");
+  accepted = remove_all_elements(&accepted, "<w:moveFromRangeEnd");
+  accepted = remove_all_elements(&accepted, "<w:moveToRangeStart");
+  remove_all_elements(&accepted, "<w:moveToRangeEnd")
+}
+
+fn unwrap_all_elements(xml: &str, start_pattern: &str, end_pattern: &str) -> String {
+  let mut output = String::with_capacity(xml.len());
+  let mut rest = xml;
+
+  while let Some(start) = rest.find(start_pattern) {
+    output.push_str(&rest[..start]);
+    let element_rest = &rest[start..];
+    let Some(open_end) = element_rest.find('>') else {
+      output.push_str(element_rest);
+      return output;
+    };
+    let open_end = open_end + 1;
+    let Some(close_start) = element_rest[open_end..].find(end_pattern) else {
+      output.push_str(element_rest);
+      return output;
+    };
+    let close_start = open_end + close_start;
+    output.push_str(&element_rest[open_end..close_start]);
+    rest = &element_rest[close_start + end_pattern.len()..];
+  }
+
+  output.push_str(rest);
+  output
+}
+
+fn remove_all_paired_elements(xml: &str, start_pattern: &str, end_pattern: &str) -> String {
+  let mut output = String::with_capacity(xml.len());
+  let mut rest = xml;
+
+  while let Some(start) = rest.find(start_pattern) {
+    output.push_str(&rest[..start]);
+    let element_rest = &rest[start..];
+    let Some(open_end) = element_rest.find('>') else {
+      output.push_str(element_rest);
+      return output;
+    };
+    if element_rest[open_end.saturating_sub(1)..=open_end].starts_with('/') {
+      rest = &element_rest[open_end + 1..];
+      continue;
+    }
+    let Some(close_start) = element_rest[open_end + 1..].find(end_pattern) else {
+      output.push_str(element_rest);
+      return output;
+    };
+    rest = &element_rest[open_end + 1 + close_start + end_pattern.len()..];
+  }
+
+  output.push_str(rest);
+  output
+}
+
 fn extract_text_values(xml: &str) -> Vec<String> {
   let mut values = Vec::new();
   let mut rest = xml;
@@ -1600,6 +1728,48 @@ mod tests {
     assert!(document_xml.contains("<pic:pic "));
   }
 
+  #[test]
+  fn replaces_text_in_main_document_text_nodes() {
+    let fixture = write_word_fixture();
+
+    let bytes =
+      replace_text_in_main_document(&fixture, "Hello", "Hi & welcome").expect("replace text");
+
+    let reopened = WordprocessingDocument::new(Cursor::new(bytes)).expect("reopen document");
+    let main_part = reopened.main_document_part().expect("main document part");
+    let document_xml = main_part
+      .data_as_str(&reopened)
+      .expect("document xml")
+      .expect("document data");
+
+    assert!(document_xml.contains("<w:t>Hi &amp; welcome</w:t>"));
+    assert!(!document_xml.contains("<w:t>Hello</w:t>"));
+  }
+
+  #[test]
+  fn accepts_common_revision_markup() {
+    let fixture = write_revision_word_fixture();
+
+    let bytes = accept_common_revisions(&fixture).expect("accept revisions");
+
+    let reopened = WordprocessingDocument::new(Cursor::new(bytes)).expect("reopen document");
+    let main_part = reopened.main_document_part().expect("main document part");
+    let document_xml = main_part
+      .data_as_str(&reopened)
+      .expect("document xml")
+      .expect("document data");
+
+    assert!(document_xml.contains("<w:t>Kept insertion</w:t>"));
+    assert!(document_xml.contains("<w:t>Moved here</w:t>"));
+    assert!(!document_xml.contains("Deleted text"));
+    assert!(!document_xml.contains("Moved away"));
+    assert!(!document_xml.contains("<w:ins"));
+    assert!(!document_xml.contains("<w:del"));
+    assert!(!document_xml.contains("<w:moveFrom"));
+    assert!(!document_xml.contains("<w:moveTo"));
+    assert!(!document_xml.contains("<w:pPrChange"));
+  }
+
   fn write_word_fixture() -> std::path::PathBuf {
     let path = std::env::temp_dir().join(format!(
       "ooxmlsdk-doc-word-{}-{}.docx",
@@ -1841,6 +2011,70 @@ mod tests {
       .expect("write document");
 
     zip.finish().expect("finish hidden text fixture");
+    path
+  }
+
+  fn write_revision_word_fixture() -> std::path::PathBuf {
+    let path = std::env::temp_dir().join(format!(
+      "ooxmlsdk-doc-word-revisions-{}-{}.docx",
+      std::process::id(),
+      FIXTURE_COUNTER.fetch_add(1, Ordering::Relaxed)
+    ));
+    let file = std::fs::File::create(&path).expect("create revision fixture");
+    let mut zip = zip::ZipWriter::new(file);
+    let options = zip::write::SimpleFileOptions::default();
+
+    zip
+      .start_file("[Content_Types].xml", options)
+      .expect("content types");
+    zip.write_all(
+      br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+</Types>"#,
+    )
+    .expect("write content types");
+
+    zip.add_directory("_rels", options).expect("rels dir");
+    zip
+      .start_file("_rels/.rels", options)
+      .expect("package rels");
+    zip.write_all(
+      br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+</Relationships>"#,
+    )
+    .expect("write package rels");
+
+    zip.add_directory("word", options).expect("word dir");
+    zip
+      .start_file("word/document.xml", options)
+      .expect("document");
+    zip
+      .write_all(
+        br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p>
+      <w:pPr><w:pPrChange w:id="1"><w:pPr/></w:pPrChange></w:pPr>
+      <w:ins w:id="2"><w:r><w:t>Kept insertion</w:t></w:r></w:ins>
+      <w:del w:id="3"><w:r><w:delText>Deleted text</w:delText></w:r></w:del>
+      <w:moveFromRangeStart w:id="4"/>
+      <w:moveFrom w:id="5"><w:r><w:t>Moved away</w:t></w:r></w:moveFrom>
+      <w:moveFromRangeEnd w:id="4"/>
+      <w:moveToRangeStart w:id="6"/>
+      <w:moveTo w:id="7"><w:r><w:t>Moved here</w:t></w:r></w:moveTo>
+      <w:moveToRangeEnd w:id="6"/>
+    </w:p>
+  </w:body>
+</w:document>"#,
+      )
+      .expect("write document");
+
+    zip.finish().expect("finish revision fixture");
     path
   }
 

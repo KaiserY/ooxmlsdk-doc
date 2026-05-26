@@ -3,6 +3,8 @@ use std::collections::BTreeMap;
 use std::io::Cursor;
 use std::path::Path;
 
+use ooxmlsdk::parts::chart_part::ChartPart;
+use ooxmlsdk::parts::drawings_part::DrawingsPart;
 use ooxmlsdk::parts::ribbon_extensibility_part::RibbonExtensibilityPart;
 use ooxmlsdk::parts::spreadsheet_document::SpreadsheetDocument;
 use ooxmlsdk::parts::table_definition_part::TableDefinitionPart;
@@ -325,6 +327,77 @@ pub fn add_table(
 }
 // ANCHOR_END: add_table
 
+// ANCHOR: copy_worksheet
+pub fn copy_worksheet(
+  path: &Path,
+  source_sheet_name: &str,
+  new_sheet_name: &str,
+) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = SpreadsheetDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let workbook_part = document.workbook_part()?;
+  let source_part = worksheet_part_by_name(&document, &workbook_part, source_sheet_name)?;
+  let copied_xml = source_part
+    .data_as_str(&document)?
+    .unwrap_or_default()
+    .to_string();
+  let new_part = workbook_part.add_new_part_auto_id::<_, WorksheetPart>(&mut document)?;
+  new_part.set_data(&mut document, copied_xml.into_bytes())?;
+  let relationship_id = workbook_part
+    .get_id_of_part(&document, &new_part)
+    .expect("worksheet relationship id")
+    .to_string();
+  let workbook_xml = workbook_part.data_as_str(&document)?.unwrap_or_default();
+  let updated_workbook_xml = append_sheet(workbook_xml, new_sheet_name, &relationship_id)?;
+
+  workbook_part.set_data(&mut document, updated_workbook_xml.into_bytes())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: copy_worksheet
+
+// ANCHOR: insert_bar_chart
+pub fn insert_bar_chart(
+  path: &Path,
+  sheet_name: &str,
+  title: &str,
+) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = SpreadsheetDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let workbook_part = document.workbook_part()?;
+  let worksheet_part = worksheet_part_by_name(&document, &workbook_part, sheet_name)?;
+  let drawings_part = if let Some(part) = worksheet_part.drawings_part(&document) {
+    part
+  } else {
+    worksheet_part.add_new_part_auto_id::<_, DrawingsPart>(&mut document)?
+  };
+  let drawing_relationship_id = worksheet_part
+    .get_id_of_part(&document, &drawings_part)
+    .expect("drawing relationship id")
+    .to_string();
+  let chart_part = drawings_part.add_new_part_auto_id::<_, ChartPart>(&mut document)?;
+  let chart_relationship_id = drawings_part
+    .get_id_of_part(&document, &chart_part)
+    .expect("chart relationship id")
+    .to_string();
+
+  chart_part.set_data(&mut document, chart_xml(title).into_bytes())?;
+  drawings_part.set_data(
+    &mut document,
+    drawing_xml(&chart_relationship_id).into_bytes(),
+  )?;
+
+  let worksheet_xml = worksheet_part.data_as_str(&document)?.unwrap_or_default();
+  let worksheet_xml = ensure_relationship_namespace(worksheet_xml);
+  let updated_xml = append_drawing_reference(&worksheet_xml, &drawing_relationship_id)?;
+  worksheet_part.set_data(&mut document, updated_xml.into_bytes())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: insert_bar_chart
+
 fn lazy_settings() -> OpenSettings {
   OpenSettings {
     open_mode: PackageOpenMode::Lazy,
@@ -586,6 +659,38 @@ fn append_table_reference(
   updated.push_str(&table_parts);
   updated.push_str(&worksheet_xml[insert_at..]);
   Ok(updated)
+}
+
+fn append_drawing_reference(
+  worksheet_xml: &str,
+  relationship_id: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+  if worksheet_xml.contains(&format!(r#"<drawing r:id="{relationship_id}"/>"#)) {
+    return Ok(worksheet_xml.to_string());
+  }
+  let drawing_xml = format!(r#"<drawing r:id="{relationship_id}"/>"#);
+  let insert_at = worksheet_xml
+    .find("</worksheet>")
+    .ok_or("worksheet root not found")?;
+  let mut updated = String::with_capacity(worksheet_xml.len() + drawing_xml.len());
+  updated.push_str(&worksheet_xml[..insert_at]);
+  updated.push_str(&drawing_xml);
+  updated.push_str(&worksheet_xml[insert_at..]);
+  Ok(updated)
+}
+
+fn drawing_xml(chart_relationship_id: &str) -> String {
+  let chart_relationship_id = escape_xml_text(chart_relationship_id);
+  format!(
+    r#"<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><xdr:twoCellAnchor><xdr:from><xdr:col>3</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>1</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:to><xdr:col>8</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>15</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to><xdr:graphicFrame macro=""><xdr:nvGraphicFramePr><xdr:cNvPr id="2" name="Chart 1"/><xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr><xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/chart"><c:chart r:id="{chart_relationship_id}"/></a:graphicData></a:graphic></xdr:graphicFrame><xdr:clientData/></xdr:twoCellAnchor></xdr:wsDr>"#
+  )
+}
+
+fn chart_xml(title: &str) -> String {
+  let title = escape_xml_text(title);
+  format!(
+    r#"<c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><c:lang val="en-US"/><c:chart><c:title><c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>{title}</a:t></a:r></a:p></c:rich></c:tx><c:layout/></c:title><c:plotArea><c:layout/><c:barChart><c:barDir val="col"/><c:grouping val="clustered"/><c:ser><c:idx val="0"/><c:order val="0"/><c:tx><c:v>Sales</c:v></c:tx><c:cat><c:strRef><c:f>Summary!$A$2:$A$2</c:f></c:strRef></c:cat><c:val><c:numRef><c:f>Summary!$B$2:$B$2</c:f></c:numRef></c:val></c:ser><c:axId val="48650112"/><c:axId val="48672768"/></c:barChart><c:catAx><c:axId val="48650112"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:axPos val="b"/><c:tickLblPos val="nextTo"/><c:crossAx val="48672768"/><c:crosses val="autoZero"/><c:auto val="1"/><c:lblAlgn val="ctr"/><c:lblOffset val="100"/></c:catAx><c:valAx><c:axId val="48672768"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:axPos val="l"/><c:majorGridlines/><c:tickLblPos val="nextTo"/><c:crossAx val="48650112"/><c:crosses val="autoZero"/><c:crossBetween val="between"/></c:valAx></c:plotArea><c:legend><c:legendPos val="r"/><c:layout/></c:legend><c:plotVisOnly val="1"/></c:chart></c:chartSpace>"#
+  )
 }
 
 fn find_table_parts_range(xml: &str) -> Option<(usize, usize, usize)> {
@@ -1190,6 +1295,68 @@ mod tests {
     assert!(table_xml.contains(r#"name="SalesTable""#));
     assert!(table_xml.contains(r#"ref="A1:B2""#));
     assert!(table_xml.contains(r#"<tableColumns count="2">"#));
+  }
+
+  #[test]
+  fn copies_worksheet_xml_and_updates_workbook() {
+    let fixture = write_spreadsheet_fixture();
+
+    let bytes = copy_worksheet(&fixture, "Summary", "Summary Copy").expect("copy worksheet");
+
+    let reopened = SpreadsheetDocument::new(Cursor::new(bytes)).expect("reopen spreadsheet");
+    let workbook_part = reopened.workbook_part().expect("workbook part");
+    let workbook_xml = workbook_part
+      .data_as_str(&reopened)
+      .expect("workbook xml")
+      .expect("workbook data");
+    let sheets: Vec<_> = workbook_part.worksheet_parts(&reopened).collect();
+    let copied_xml = sheets[2]
+      .data_as_str(&reopened)
+      .expect("copied worksheet xml")
+      .expect("copied worksheet data");
+
+    assert_eq!(sheets.len(), 3);
+    assert!(workbook_xml.contains(r#"name="Summary Copy""#));
+    assert!(workbook_xml.contains(r#"sheetId="3""#));
+    assert!(copied_xml.contains(r#"<c r="A1" t="s"><v>0</v></c>"#));
+    assert!(copied_xml.contains(r#"<col min="3" max="4" hidden="1"/>"#));
+  }
+
+  #[test]
+  fn inserts_bar_chart_parts_and_drawing_reference() {
+    let fixture = write_spreadsheet_fixture();
+
+    let bytes = insert_bar_chart(&fixture, "Summary", "Sales Chart").expect("insert chart");
+
+    let reopened = SpreadsheetDocument::new(Cursor::new(bytes)).expect("reopen spreadsheet");
+    let workbook_part = reopened.workbook_part().expect("workbook part");
+    let first_sheet = workbook_part
+      .worksheet_parts(&reopened)
+      .next()
+      .expect("first worksheet");
+    let worksheet_xml = first_sheet
+      .data_as_str(&reopened)
+      .expect("worksheet xml")
+      .expect("worksheet data");
+    let drawings_part = first_sheet.drawings_part(&reopened).expect("drawings part");
+    let drawing_xml = drawings_part
+      .data_as_str(&reopened)
+      .expect("drawing xml")
+      .expect("drawing data");
+    let chart_part = drawings_part
+      .chart_parts(&reopened)
+      .next()
+      .expect("chart part");
+    let chart_xml = chart_part
+      .data_as_str(&reopened)
+      .expect("chart xml")
+      .expect("chart data");
+
+    assert!(worksheet_xml.contains("<drawing r:id="));
+    assert!(drawing_xml.contains("<xdr:twoCellAnchor>"));
+    assert!(drawing_xml.contains("<c:chart r:id="));
+    assert!(chart_xml.contains("<c:barChart>"));
+    assert!(chart_xml.contains("<a:t>Sales Chart</a:t>"));
   }
 
   fn write_spreadsheet_fixture() -> std::path::PathBuf {

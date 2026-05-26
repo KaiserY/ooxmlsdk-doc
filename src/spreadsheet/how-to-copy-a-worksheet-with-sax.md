@@ -16,10 +16,10 @@ Even if the worksheet XML is streamed, the workbook `sheets` collection is usual
 
 ## Rust workflow
 
-Use `ooxmlsdk` to locate the source worksheet part:
+Copy the source worksheet XML into a new worksheet part and append a workbook sheet entry:
 
 ```rust
-{{#include ../../listings/spreadsheet/src/lib.rs:get_worksheet_xml}}
+{{#include ../../listings/spreadsheet/src/lib.rs:copy_worksheet}}
 ```
 
-This chapter does not yet publish a copy writer. A safe implementation must copy worksheet XML, relationships, tables, drawings, comments, printer settings, and workbook metadata consistently. Add that implementation to `listings/spreadsheet` with a fixture before documenting final code.
+If the source worksheet owns drawings, tables, comments, printer settings, or other related parts, copy those relationships and rewrite references in the copied worksheet as needed. The example above covers the worksheet XML, workbook relationship, and workbook sheet list.
