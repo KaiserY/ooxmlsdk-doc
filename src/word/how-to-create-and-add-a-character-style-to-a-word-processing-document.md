@@ -26,12 +26,10 @@ WordprocessingML supports paragraph, character, linked, table, numbering, and de
 
 ## Rust workflow
 
-Read existing styles first:
+Create or reuse the styles part, append a character style definition, and avoid duplicating an existing style id:
 
 ```rust
-{{#include ../../listings/word/src/lib.rs:get_style_ids}}
+{{#include ../../listings/word/src/lib.rs:create_character_style}}
 ```
-
-This chapter does not yet publish a style writer. A final implementation should create the styles part when missing, avoid duplicate style ids, and save valid style XML.
 
 In `ooxmlsdk`, generated schema types include `Styles`, `Style`, `Aliases`, `StyleName`, `StyleRunProperties`, `RunStyle`, `RunFonts`, `FontSize`, `Color`, `Bold`, and `Italic`.

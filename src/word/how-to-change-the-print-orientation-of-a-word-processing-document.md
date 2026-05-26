@@ -17,12 +17,10 @@ When changing between portrait and landscape, update `w:orient` and swap page wi
 
 ## Rust workflow
 
-Open the main document part and inspect section properties:
+Open the main document part, locate section properties, and write a matching page size:
 
 ```rust
-{{#include ../../listings/word/src/lib.rs:open_word_read_only}}
+{{#include ../../listings/word/src/lib.rs:change_print_orientation}}
 ```
-
-This chapter does not yet publish an orientation writer. A safe implementation must update the intended section, swap width and height when needed, and preserve other section settings.
 
 In `ooxmlsdk`, generated schema types include `SectionProperties`, `PageSize`, and `PageMargin`. The `w:orient` attribute can be absent; absence normally behaves like portrait, so a writer should avoid rewriting sections whose effective orientation already matches the requested value.

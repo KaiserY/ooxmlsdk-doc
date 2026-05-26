@@ -16,13 +16,11 @@ If the target paragraph has no `<w:pPr/>`, create paragraph properties before ad
 
 ## Rust workflow
 
-Read available style ids before applying one:
+Verify the style id exists, then update the first paragraph's paragraph properties:
 
 ```rust
-{{#include ../../listings/word/src/lib.rs:get_style_ids}}
+{{#include ../../listings/word/src/lib.rs:apply_style_to_first_paragraph}}
 ```
-
-This chapter does not yet publish a style application writer. A complete implementation should verify the style exists, locate the target paragraph, and update only its `<w:pPr/>`.
 
 Applying a nonexistent style id does not make the document display that style. A robust writer should read the style definitions part, check by `styleId`, optionally map from style name to id, and either add the missing style or return a clear error. A styles part is optional in a minimal document, so code must handle the missing-part case explicitly.
 

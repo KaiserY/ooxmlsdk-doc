@@ -6,13 +6,11 @@ Word 2013 and later documents can contain both `styles.xml` and `stylesWithEffec
 
 ## Rust workflow
 
-Inspect the existing styles part first:
+Create or reuse the normal styles part, then replace its XML payload:
 
 ```rust
-{{#include ../../listings/word/src/lib.rs:get_style_ids}}
+{{#include ../../listings/word/src/lib.rs:replace_styles_part}}
 ```
-
-This chapter does not yet publish a styles replacement writer. A final implementation should handle missing styles parts, preserve relationship ids where possible, and verify that referenced style ids still exist.
 
 The upstream workflow extracts a complete styles part from a source document, then writes that XML into the target styles part. If the requested target part does not exist, decide whether to create it or return an explicit error. Replacing styles can change document appearance immediately because paragraphs, runs, tables, and numbering reference style ids.
 

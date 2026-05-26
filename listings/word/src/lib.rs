@@ -2,7 +2,9 @@
 use std::io::Cursor;
 use std::path::Path;
 
+use ooxmlsdk::parts::header_part::HeaderPart;
 use ooxmlsdk::parts::image_part::ImagePart;
+use ooxmlsdk::parts::style_definitions_part::StyleDefinitionsPart;
 use ooxmlsdk::parts::wordprocessing_document::WordprocessingDocument;
 use ooxmlsdk::sdk::{OpenSettings, PackageOpenMode, SdkPart, WordprocessingDocumentType};
 
@@ -230,6 +232,161 @@ pub fn set_first_run_font(
 }
 // ANCHOR_END: set_first_run_font
 
+// ANCHOR: replace_header
+pub fn replace_header(
+  path: &Path,
+  header_text: &str,
+) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = WordprocessingDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let main_part = document.main_document_part()?;
+  let header_part = if let Some(part) = main_part.header_parts(&document).next() {
+    part
+  } else {
+    main_part.add_new_part_auto_id::<_, HeaderPart>(&mut document)?
+  };
+  let relationship_id = main_part
+    .get_id_of_part(&document, &header_part)
+    .expect("header relationship id")
+    .to_string();
+
+  header_part.set_data(&mut document, header_xml(header_text).into_bytes())?;
+  let document_xml = main_part.data_as_str(&document)?.unwrap_or_default();
+  let updated_xml = set_header_reference(document_xml, &relationship_id)?;
+
+  main_part.set_data(&mut document, updated_xml.into_bytes())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: replace_header
+
+// ANCHOR: remove_headers_and_footers
+pub fn remove_headers_and_footers(path: &Path) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = WordprocessingDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let main_part = document.main_document_part()?;
+  let header_parts: Vec<_> = main_part.header_parts(&document).collect();
+  let footer_parts: Vec<_> = main_part.footer_parts(&document).collect();
+  for header_part in header_parts {
+    main_part.delete_part(&mut document, header_part)?;
+  }
+  for footer_part in footer_parts {
+    main_part.delete_part(&mut document, footer_part)?;
+  }
+
+  let document_xml = main_part.data_as_str(&document)?.unwrap_or_default();
+  let updated_xml = remove_header_footer_references(document_xml);
+  main_part.set_data(&mut document, updated_xml.into_bytes())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: remove_headers_and_footers
+
+// ANCHOR: create_paragraph_style
+pub fn create_paragraph_style(
+  path: &Path,
+  style_id: &str,
+  style_name: &str,
+) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  add_style(path, style_id, style_name, "paragraph")
+}
+// ANCHOR_END: create_paragraph_style
+
+// ANCHOR: create_character_style
+pub fn create_character_style(
+  path: &Path,
+  style_id: &str,
+  style_name: &str,
+) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  add_style(path, style_id, style_name, "character")
+}
+// ANCHOR_END: create_character_style
+
+// ANCHOR: apply_style_to_first_paragraph
+pub fn apply_style_to_first_paragraph(
+  path: &Path,
+  style_id: &str,
+) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = WordprocessingDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let main_part = document.main_document_part()?;
+  let Some(styles_part) = main_part.style_definitions_part(&document) else {
+    return Err("document has no styles part".into());
+  };
+  let styles_xml = styles_part.data_as_str(&document)?.unwrap_or_default();
+  if !styles_xml.contains(&format!(r#"w:styleId="{style_id}""#)) {
+    return Err(format!("style {style_id} not found").into());
+  }
+
+  let document_xml = main_part.data_as_str(&document)?.unwrap_or_default();
+  let updated_xml = set_first_paragraph_style(document_xml, style_id)?;
+  main_part.set_data(&mut document, updated_xml.into_bytes())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: apply_style_to_first_paragraph
+
+// ANCHOR: change_print_orientation
+pub fn change_print_orientation(
+  path: &Path,
+  landscape: bool,
+) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = WordprocessingDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let main_part = document.main_document_part()?;
+  let document_xml = main_part.data_as_str(&document)?.unwrap_or_default();
+  let updated_xml = set_section_orientation(document_xml, landscape)?;
+
+  main_part.set_data(&mut document, updated_xml.into_bytes())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: change_print_orientation
+
+// ANCHOR: replace_styles_part
+pub fn replace_styles_part(
+  path: &Path,
+  styles_xml: &str,
+) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  if !styles_xml.contains("<w:styles") {
+    return Err("styles XML must contain a w:styles root".into());
+  }
+
+  let mut document = WordprocessingDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let main_part = document.main_document_part()?;
+  let styles_part = if let Some(part) = main_part.style_definitions_part(&document) {
+    part
+  } else {
+    main_part.add_new_part_auto_id::<_, StyleDefinitionsPart>(&mut document)?
+  };
+
+  styles_part.set_data(&mut document, styles_xml.as_bytes().to_vec())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: replace_styles_part
+
+// ANCHOR: remove_hidden_text
+pub fn remove_hidden_text(path: &Path) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = WordprocessingDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let main_part = document.main_document_part()?;
+  let document_xml = main_part.data_as_str(&document)?.unwrap_or_default();
+  let updated_xml = remove_runs_with_direct_vanish(document_xml);
+
+  main_part.set_data(&mut document, updated_xml.into_bytes())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: remove_hidden_text
+
 fn lazy_settings() -> OpenSettings {
   OpenSettings {
     open_mode: PackageOpenMode::Lazy,
@@ -343,6 +500,307 @@ fn set_first_run_fonts(
   updated.push_str(&updated_run_inner);
   updated.push_str(&document_xml[run_end..]);
   Ok(updated)
+}
+
+fn header_xml(text: &str) -> String {
+  let text = escape_xml_text(text);
+  format!(
+    r#"<w:hdr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:p><w:r><w:t>{text}</w:t></w:r></w:p></w:hdr>"#
+  )
+}
+
+fn add_style(
+  path: &Path,
+  style_id: &str,
+  style_name: &str,
+  style_type: &str,
+) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = WordprocessingDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let main_part = document.main_document_part()?;
+  let styles_part = if let Some(part) = main_part.style_definitions_part(&document) {
+    part
+  } else {
+    main_part.add_new_part_auto_id::<_, StyleDefinitionsPart>(&mut document)?
+  };
+  let styles_xml = styles_part
+    .data_as_str(&document)?
+    .map(str::to_string)
+    .unwrap_or_else(|| {
+      r#"<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"></w:styles>"#
+        .to_string()
+    });
+  let updated_xml = append_style(&styles_xml, style_id, style_name, style_type)?;
+
+  styles_part.set_data(&mut document, updated_xml.into_bytes())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+
+fn append_style(
+  styles_xml: &str,
+  style_id: &str,
+  style_name: &str,
+  style_type: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+  if styles_xml.contains(&format!(r#"w:styleId="{style_id}""#)) {
+    return Ok(styles_xml.to_string());
+  }
+  let Some(insert_at) = styles_xml.find("</w:styles>") else {
+    return Err("styles root not found".into());
+  };
+  let style_id = escape_xml_attr(style_id);
+  let style_name = escape_xml_attr(style_name);
+  let style_type = escape_xml_attr(style_type);
+  let style_xml = format!(
+    r#"<w:style w:type="{style_type}" w:styleId="{style_id}"><w:name w:val="{style_name}"/></w:style>"#
+  );
+  let mut updated = String::with_capacity(styles_xml.len() + style_xml.len());
+  updated.push_str(&styles_xml[..insert_at]);
+  updated.push_str(&style_xml);
+  updated.push_str(&styles_xml[insert_at..]);
+  Ok(updated)
+}
+
+fn ensure_relationship_namespace(document_xml: &str) -> String {
+  if document_xml.contains("xmlns:r=") {
+    return document_xml.to_string();
+  }
+  document_xml.replacen(
+    "<w:document ",
+    r#"<w:document xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" "#,
+    1,
+  )
+}
+
+fn set_header_reference(
+  document_xml: &str,
+  relationship_id: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+  let document_xml = ensure_relationship_namespace(document_xml);
+  let header_ref = format!(r#"<w:headerReference w:type="default" r:id="{relationship_id}"/>"#);
+  if let Some((start, end)) = find_element_range(&document_xml, "<w:headerReference", None) {
+    let mut updated = String::with_capacity(document_xml.len() + header_ref.len());
+    updated.push_str(&document_xml[..start]);
+    updated.push_str(&header_ref);
+    updated.push_str(&document_xml[end..]);
+    return Ok(updated);
+  }
+  let Some(sect_start) = document_xml.find("<w:sectPr") else {
+    return Err("section properties not found".into());
+  };
+  let sect_open_end = document_xml[sect_start..]
+    .find('>')
+    .map(|index| sect_start + index + 1)
+    .ok_or("section properties start not found")?;
+  if document_xml[sect_open_end - 2..sect_open_end].starts_with('/') {
+    let mut updated = String::with_capacity(document_xml.len() + header_ref.len() + 10);
+    updated.push_str(&document_xml[..sect_open_end - 2]);
+    updated.push('>');
+    updated.push_str(&header_ref);
+    updated.push_str("</w:sectPr>");
+    updated.push_str(&document_xml[sect_open_end..]);
+    return Ok(updated);
+  }
+  let mut updated = String::with_capacity(document_xml.len() + header_ref.len());
+  updated.push_str(&document_xml[..sect_open_end]);
+  updated.push_str(&header_ref);
+  updated.push_str(&document_xml[sect_open_end..]);
+  Ok(updated)
+}
+
+fn remove_header_footer_references(document_xml: &str) -> String {
+  let without_headers = remove_all_elements(document_xml, "<w:headerReference");
+  remove_all_elements(&without_headers, "<w:footerReference")
+}
+
+fn set_first_paragraph_style(
+  document_xml: &str,
+  style_id: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+  let paragraph_start = document_xml.find("<w:p>").ok_or("paragraph not found")?;
+  let paragraph_open_end = paragraph_start + "<w:p>".len();
+  let paragraph_end = document_xml[paragraph_open_end..]
+    .find("</w:p>")
+    .map(|index| paragraph_open_end + index)
+    .ok_or("paragraph end not found")?;
+  let paragraph_inner = &document_xml[paragraph_open_end..paragraph_end];
+  let style_id = escape_xml_attr(style_id);
+  let style_xml = format!(r#"<w:pStyle w:val="{style_id}"/>"#);
+
+  let updated_inner = if let Some(ppr_start) = paragraph_inner.find("<w:pPr>") {
+    let ppr_insert = ppr_start + "<w:pPr>".len();
+    if let Some((style_start, style_end)) =
+      find_element_range(paragraph_inner, "<w:pStyle", Some(ppr_insert))
+    {
+      let mut value = String::with_capacity(paragraph_inner.len() + style_xml.len());
+      value.push_str(&paragraph_inner[..style_start]);
+      value.push_str(&style_xml);
+      value.push_str(&paragraph_inner[style_end..]);
+      value
+    } else {
+      let mut value = String::with_capacity(paragraph_inner.len() + style_xml.len());
+      value.push_str(&paragraph_inner[..ppr_insert]);
+      value.push_str(&style_xml);
+      value.push_str(&paragraph_inner[ppr_insert..]);
+      value
+    }
+  } else {
+    format!("<w:pPr>{style_xml}</w:pPr>{paragraph_inner}")
+  };
+
+  let mut updated = String::with_capacity(document_xml.len() + updated_inner.len());
+  updated.push_str(&document_xml[..paragraph_open_end]);
+  updated.push_str(&updated_inner);
+  updated.push_str(&document_xml[paragraph_end..]);
+  Ok(updated)
+}
+
+fn set_section_orientation(
+  document_xml: &str,
+  landscape: bool,
+) -> Result<String, Box<dyn std::error::Error>> {
+  let Some(sect_start) = document_xml.find("<w:sectPr") else {
+    return Err("section properties not found".into());
+  };
+  let sect_open_end = document_xml[sect_start..]
+    .find('>')
+    .map(|index| sect_start + index + 1)
+    .ok_or("section properties start not found")?;
+  let (sect_end, was_self_closing) =
+    if document_xml[sect_open_end - 2..sect_open_end].starts_with('/') {
+      (sect_open_end, true)
+    } else {
+      (
+        document_xml[sect_open_end..]
+          .find("</w:sectPr>")
+          .map(|index| sect_open_end + index + "</w:sectPr>".len())
+          .ok_or("section properties end not found")?,
+        false,
+      )
+    };
+  let section_xml = if was_self_closing {
+    let mut section = document_xml[sect_start..sect_open_end - 2].to_string();
+    section.push('>');
+    section.push_str("</w:sectPr>");
+    section
+  } else {
+    document_xml[sect_start..sect_end].to_string()
+  };
+  let page_size = if landscape {
+    r#"<w:pgSz w:w="15840" w:h="12240" w:orient="landscape"/>"#
+  } else {
+    r#"<w:pgSz w:w="12240" w:h="15840" w:orient="portrait"/>"#
+  };
+  let updated_section =
+    if let Some((start, end)) = find_element_range(&section_xml, "<w:pgSz", None) {
+      let mut section = String::with_capacity(section_xml.len() + page_size.len());
+      section.push_str(&section_xml[..start]);
+      section.push_str(page_size);
+      section.push_str(&section_xml[end..]);
+      section
+    } else {
+      let insert_at = section_xml.find('>').ok_or("section start not found")? + 1;
+      let mut section = String::with_capacity(section_xml.len() + page_size.len());
+      section.push_str(&section_xml[..insert_at]);
+      section.push_str(page_size);
+      section.push_str(&section_xml[insert_at..]);
+      section
+    };
+  let mut updated = String::with_capacity(document_xml.len() + updated_section.len());
+  updated.push_str(&document_xml[..sect_start]);
+  updated.push_str(&updated_section);
+  updated.push_str(&document_xml[sect_end..]);
+  Ok(updated)
+}
+
+fn remove_all_elements(xml: &str, start_pattern: &str) -> String {
+  let mut output = String::with_capacity(xml.len());
+  let mut rest = xml;
+  while let Some(start) = rest.find(start_pattern) {
+    output.push_str(&rest[..start]);
+    let element_rest = &rest[start..];
+    let Some(open_end) = element_rest.find('>') else {
+      output.push_str(element_rest);
+      return output;
+    };
+    rest = &element_rest[open_end + 1..];
+  }
+  output.push_str(rest);
+  output
+}
+
+fn find_element_range(
+  xml: &str,
+  start_pattern: &str,
+  search_from: Option<usize>,
+) -> Option<(usize, usize)> {
+  let base = search_from.unwrap_or(0);
+  let start = xml[base..].find(start_pattern)? + base;
+  let open_end = xml[start..].find('>')? + start + 1;
+  if xml[open_end - 2..open_end].starts_with('/') {
+    return Some((start, open_end));
+  }
+  None
+}
+
+fn remove_runs_with_direct_vanish(document_xml: &str) -> String {
+  let mut output = String::with_capacity(document_xml.len());
+  let mut rest = document_xml;
+
+  while let Some(run_start) = rest.find("<w:r") {
+    output.push_str(&rest[..run_start]);
+    let run_rest = &rest[run_start..];
+    let Some(open_end) = run_rest.find('>') else {
+      output.push_str(run_rest);
+      return output;
+    };
+    let open_end = open_end + 1;
+    if run_rest[open_end - 2..open_end].starts_with('/') {
+      output.push_str(&run_rest[..open_end]);
+      rest = &run_rest[open_end..];
+      continue;
+    }
+    let Some(close_start) = run_rest[open_end..].find("</w:r>") else {
+      output.push_str(run_rest);
+      return output;
+    };
+    let run_end = open_end + close_start + "</w:r>".len();
+    let run_xml = &run_rest[..run_end];
+    if !has_direct_vanish(run_xml) {
+      output.push_str(run_xml);
+    }
+    rest = &run_rest[run_end..];
+  }
+
+  output.push_str(rest);
+  output
+}
+
+fn has_direct_vanish(run_xml: &str) -> bool {
+  let Some(properties_start) = run_xml.find("<w:rPr") else {
+    return false;
+  };
+  let Some(properties_open_end) = run_xml[properties_start..].find('>') else {
+    return false;
+  };
+  let properties_open_end = properties_start + properties_open_end + 1;
+  let Some(properties_close_start) = run_xml[properties_open_end..].find("</w:rPr>") else {
+    return false;
+  };
+  let properties_xml = &run_xml[properties_open_end..properties_open_end + properties_close_start];
+  let Some(vanish_start) = properties_xml.find("<w:vanish") else {
+    return false;
+  };
+  let Some(vanish_open_end) = properties_xml[vanish_start..].find('>') else {
+    return false;
+  };
+  let vanish_tag = &properties_xml[vanish_start..vanish_start + vanish_open_end + 1];
+  !matches!(
+    extract_attr(vanish_tag, "w:val"),
+    Some("0" | "false" | "off")
+  )
 }
 
 fn extract_text_values(xml: &str) -> Vec<String> {
@@ -637,6 +1095,168 @@ mod tests {
     );
   }
 
+  #[test]
+  fn replaces_default_header() {
+    let fixture = write_word_fixture();
+
+    let bytes = replace_header(&fixture, "Header Text").expect("replace header");
+
+    let reopened = WordprocessingDocument::new(Cursor::new(bytes)).expect("reopen document");
+    let main_part = reopened.main_document_part().expect("main document part");
+    let document_xml = main_part
+      .data_as_str(&reopened)
+      .expect("document xml")
+      .expect("document data");
+    let header_parts: Vec<_> = main_part.header_parts(&reopened).collect();
+    let header_xml = header_parts[0]
+      .data_as_str(&reopened)
+      .expect("header xml")
+      .expect("header data");
+
+    assert_eq!(header_parts.len(), 1);
+    assert!(document_xml.contains(r#"<w:headerReference w:type="default" r:id=""#));
+    assert!(header_xml.contains("<w:t>Header Text</w:t>"));
+  }
+
+  #[test]
+  fn removes_headers_and_footers() {
+    let fixture = write_word_fixture();
+    let bytes = replace_header(&fixture, "Header Text").expect("replace header");
+    let path = write_bytes_fixture("docx", bytes);
+
+    let bytes = remove_headers_and_footers(&path).expect("remove headers and footers");
+
+    let reopened = WordprocessingDocument::new(Cursor::new(bytes)).expect("reopen document");
+    let main_part = reopened.main_document_part().expect("main document part");
+    let document_xml = main_part
+      .data_as_str(&reopened)
+      .expect("document xml")
+      .expect("document data");
+
+    assert_eq!(main_part.header_parts(&reopened).count(), 0);
+    assert_eq!(main_part.footer_parts(&reopened).count(), 0);
+    assert!(!document_xml.contains("<w:headerReference"));
+    assert!(!document_xml.contains("<w:footerReference"));
+  }
+
+  #[test]
+  fn creates_paragraph_style() {
+    let fixture = write_word_fixture();
+
+    let bytes = create_paragraph_style(&fixture, "CodeBlock", "Code Block").expect("create style");
+
+    let reopened = WordprocessingDocument::new(Cursor::new(bytes)).expect("reopen document");
+    let main_part = reopened.main_document_part().expect("main document part");
+    let styles_part = main_part
+      .style_definitions_part(&reopened)
+      .expect("styles part");
+    let styles_xml = styles_part
+      .data_as_str(&reopened)
+      .expect("styles xml")
+      .expect("styles data");
+
+    assert!(styles_xml.contains(r#"<w:style w:type="paragraph" w:styleId="CodeBlock">"#));
+    assert!(styles_xml.contains(r#"<w:name w:val="Code Block"/>"#));
+  }
+
+  #[test]
+  fn creates_character_style() {
+    let fixture = write_word_fixture();
+
+    let bytes =
+      create_character_style(&fixture, "EmphasisChar", "Emphasis Char").expect("create style");
+
+    let reopened = WordprocessingDocument::new(Cursor::new(bytes)).expect("reopen document");
+    let main_part = reopened.main_document_part().expect("main document part");
+    let styles_part = main_part
+      .style_definitions_part(&reopened)
+      .expect("styles part");
+    let styles_xml = styles_part
+      .data_as_str(&reopened)
+      .expect("styles xml")
+      .expect("styles data");
+
+    assert!(styles_xml.contains(r#"<w:style w:type="character" w:styleId="EmphasisChar">"#));
+    assert!(styles_xml.contains(r#"<w:name w:val="Emphasis Char"/>"#));
+  }
+
+  #[test]
+  fn applies_style_to_first_paragraph() {
+    let fixture = write_word_fixture();
+
+    let bytes = apply_style_to_first_paragraph(&fixture, "Heading1").expect("apply style");
+
+    let reopened = WordprocessingDocument::new(Cursor::new(bytes)).expect("reopen document");
+    let main_part = reopened.main_document_part().expect("main document part");
+    let document_xml = main_part
+      .data_as_str(&reopened)
+      .expect("document xml")
+      .expect("document data");
+
+    assert!(
+      document_xml
+        .contains(r#"<w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:t>Hello</w:t>"#)
+    );
+  }
+
+  #[test]
+  fn changes_print_orientation() {
+    let fixture = write_word_fixture();
+
+    let bytes = change_print_orientation(&fixture, true).expect("change orientation");
+
+    let reopened = WordprocessingDocument::new(Cursor::new(bytes)).expect("reopen document");
+    let main_part = reopened.main_document_part().expect("main document part");
+    let document_xml = main_part
+      .data_as_str(&reopened)
+      .expect("document xml")
+      .expect("document data");
+
+    assert!(document_xml.contains(r#"<w:pgSz w:w="15840" w:h="12240" w:orient="landscape"/>"#));
+  }
+
+  #[test]
+  fn replaces_styles_part() {
+    let fixture = write_word_fixture();
+    let replacement_styles = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:style w:type="paragraph" w:styleId="BodyText"><w:name w:val="Body Text"/></w:style>
+</w:styles>"#;
+
+    let bytes = replace_styles_part(&fixture, replacement_styles).expect("replace styles");
+
+    let reopened = WordprocessingDocument::new(Cursor::new(bytes)).expect("reopen document");
+    let main_part = reopened.main_document_part().expect("main document part");
+    let styles_part = main_part
+      .style_definitions_part(&reopened)
+      .expect("styles part");
+    let styles_xml = styles_part
+      .data_as_str(&reopened)
+      .expect("styles xml")
+      .expect("styles data");
+
+    assert!(styles_xml.contains(r#"w:styleId="BodyText""#));
+    assert!(!styles_xml.contains(r#"w:styleId="Heading1""#));
+  }
+
+  #[test]
+  fn removes_hidden_text_runs() {
+    let fixture = write_hidden_text_word_fixture();
+
+    let bytes = remove_hidden_text(&fixture).expect("remove hidden text");
+
+    let reopened = WordprocessingDocument::new(Cursor::new(bytes)).expect("reopen document");
+    let main_part = reopened.main_document_part().expect("main document part");
+    let document_xml = main_part
+      .data_as_str(&reopened)
+      .expect("document xml")
+      .expect("document data");
+
+    assert!(document_xml.contains("<w:t>Visible</w:t>"));
+    assert!(!document_xml.contains("Hidden"));
+    assert!(!document_xml.contains("<w:vanish"));
+  }
+
   fn write_word_fixture() -> std::path::PathBuf {
     let path = std::env::temp_dir().join(format!(
       "ooxmlsdk-doc-word-{}-{}.docx",
@@ -821,6 +1441,63 @@ mod tests {
     zip.write_all(b"vba bytes").expect("write vba project");
 
     zip.finish().expect("finish macro fixture");
+    path
+  }
+
+  fn write_hidden_text_word_fixture() -> std::path::PathBuf {
+    let path = std::env::temp_dir().join(format!(
+      "ooxmlsdk-doc-word-hidden-{}-{}.docx",
+      std::process::id(),
+      FIXTURE_COUNTER.fetch_add(1, Ordering::Relaxed)
+    ));
+    let file = std::fs::File::create(&path).expect("create hidden text fixture");
+    let mut zip = zip::ZipWriter::new(file);
+    let options = zip::write::SimpleFileOptions::default();
+
+    zip
+      .start_file("[Content_Types].xml", options)
+      .expect("content types");
+    zip.write_all(
+      br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+</Types>"#,
+    )
+    .expect("write content types");
+
+    zip.add_directory("_rels", options).expect("rels dir");
+    zip
+      .start_file("_rels/.rels", options)
+      .expect("package rels");
+    zip.write_all(
+      br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+</Relationships>"#,
+    )
+    .expect("write package rels");
+
+    zip.add_directory("word", options).expect("word dir");
+    zip
+      .start_file("word/document.xml", options)
+      .expect("document");
+    zip
+      .write_all(
+        br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p>
+      <w:r><w:t>Visible</w:t></w:r>
+      <w:r><w:rPr><w:vanish/></w:rPr><w:t>Hidden</w:t></w:r>
+    </w:p>
+  </w:body>
+</w:document>"#,
+      )
+      .expect("write document");
+
+    zip.finish().expect("finish hidden text fixture");
     path
   }
 

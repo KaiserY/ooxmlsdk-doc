@@ -15,13 +15,11 @@ Hidden text is represented by run properties, usually `<w:vanish/>`, on runs or 
 
 ## Rust workflow
 
-Read the main document text through the package:
+Remove runs whose direct run properties contain active `vanish` formatting:
 
 ```rust
-{{#include ../../listings/word/src/lib.rs:get_document_text}}
+{{#include ../../listings/word/src/lib.rs:remove_hidden_text}}
 ```
-
-This chapter does not yet publish a hidden-text remover. A correct implementation should inspect run properties and style inheritance before deleting text.
 
 The upstream sample removes runs whose run properties contain `vanish`, and removes extra `vanish` elements when they are not under a run. That is a useful cleanup pattern for direct formatting, but a complete Rust implementation should also account for hidden text inherited from character or paragraph styles.
 

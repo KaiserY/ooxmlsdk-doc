@@ -18,14 +18,12 @@ Sections can define first-page, even-page, and default headers. Missing referenc
 
 ## Rust workflow
 
-Use the main document part to locate section references:
+Use the main document part to locate or create a header part, write the header XML, and update the default section reference:
 
 ```rust
-{{#include ../../listings/word/src/lib.rs:open_word_read_only}}
+{{#include ../../listings/word/src/lib.rs:replace_header}}
 ```
 
-This chapter does not yet publish a header writer. A safe implementation should preserve relationship ids where possible and handle default, first-page, and even-page headers separately.
-
-The upstream replacement flow deletes the target header part, creates a new header part, and replaces the section reference. A Rust implementation can also update the existing header part in place when the relationship and header slot should remain stable.
+This example updates the default header slot. Apply the same relationship and section-property pattern for first-page or even-page headers by changing the `w:type` value and targeting the corresponding header part.
 
 In `ooxmlsdk`, `MainDocumentPart::header_parts(&document)` traverses header parts. Generated schema types include `Header`, `HeaderReference`, and `SectionProperties`.

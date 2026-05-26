@@ -15,13 +15,11 @@ Removing headers and footers requires both package and document XML changes. Del
 
 ## Rust workflow
 
-Start from the main document part:
+Delete the related header and footer parts, then remove the corresponding references from section properties:
 
 ```rust
-{{#include ../../listings/word/src/lib.rs:open_word_read_only}}
+{{#include ../../listings/word/src/lib.rs:remove_headers_and_footers}}
 ```
-
-This chapter does not yet publish a remover. A complete implementation should remove section references, delete or orphan-check header/footer relationships, and preserve unrelated section properties.
 
 A document can contain multiple sections, and each section can have first-page, even-page, and default header/footer references. Remove all matching `HeaderReference` and `FooterReference` elements from every `SectionProperties` node.
 

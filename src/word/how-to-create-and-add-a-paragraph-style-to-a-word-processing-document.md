@@ -27,12 +27,10 @@ The `next` element controls the style applied to the next paragraph when editing
 
 ## Rust workflow
 
-Use the style extraction helper to inspect existing style ids:
+Create or reuse the styles part, append a paragraph style definition, and preserve existing styles:
 
 ```rust
-{{#include ../../listings/word/src/lib.rs:get_style_ids}}
+{{#include ../../listings/word/src/lib.rs:create_paragraph_style}}
 ```
-
-This chapter does not yet publish a paragraph style writer. A safe implementation must preserve existing styles and update relationships and content types if the styles part is absent.
 
 In `ooxmlsdk`, generated schema types include `Styles`, `Style`, `Aliases`, `StyleName`, `BasedOn`, `NextParagraphStyle`, `LinkedStyle`, `PrimaryStyle`, `StyleParagraphProperties`, `StyleRunProperties`, and `ParagraphStyleId`.
