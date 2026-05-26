@@ -17,10 +17,10 @@ The ribbon extensibility part is a package-level part. If it does not exist, a w
 
 ## Rust workflow
 
-Use `SpreadsheetDocument` to open and save the package, and use package relationship APIs for custom parts when the writer is added. The normal workbook traversal remains:
+Use `SpreadsheetDocument` to open and save the package. The package-side custom UI operation is now covered by a tested listing: add a ribbon extensibility part at the package level, write the custom UI XML, and save.
 
 ```rust
-{{#include ../../listings/spreadsheet/src/lib.rs:open_spreadsheet_read_only}}
+{{#include ../../listings/spreadsheet/src/lib.rs:add_custom_ui_part}}
 ```
 
-This chapter does not yet include a tested custom UI writer for `ooxmlsdk`.
+This covers the package relationship and part payload. A complete macro-enabled ribbon scenario still needs the workbook to contain the callback macro named by the custom UI XML, and any referenced custom UI images must be added as related parts.

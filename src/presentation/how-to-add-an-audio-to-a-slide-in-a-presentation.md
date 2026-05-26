@@ -34,13 +34,13 @@ The complete shape normally includes:
 
 ## Rust workflow
 
-Use `ooxmlsdk` to open the presentation and find the target slide:
+Use `ooxmlsdk` to open the presentation and find the target slide. The package-side media operation is tested here: create a media data part, write the audio bytes, and add slide-level audio and media reference relationships.
 
 ```rust
-{{#include ../../listings/presentation/src/lib.rs:open_presentation_read_only}}
+{{#include ../../listings/presentation/src/lib.rs:add_audio_media_references}}
 ```
 
-`ooxmlsdk` exposes media data part and audio reference relationship helpers, but this chapter does not yet include a tested writer. A complete audio insertion example must verify all of these together:
+This is not a complete PowerPoint audio insertion writer by itself. A complete audio insertion example must still verify all of these together:
 
 - media data part content type and extension,
 - slide audio and media reference relationships,

@@ -18,12 +18,18 @@ The image bytes are stored outside `document.xml`. The body contains a run with 
 
 ## Rust workflow
 
-Use the main document part as the insertion point:
+Use the main document part as the insertion point. The package-side operation is tested here: add an image part, keep the relationship id, feed the image bytes, and save the package.
 
 ```rust
-{{#include ../../listings/word/src/lib.rs:open_word_read_only}}
+{{#include ../../listings/word/src/lib.rs:add_image_part}}
 ```
 
-This chapter does not yet publish a picture writer. A final implementation should add the image part, create the relationship, insert valid drawing markup, and verify the saved document.
+When inspecting or updating existing picture relationships, preserve the relationship ids that body DrawingML references:
 
-In `ooxmlsdk`, `MainDocumentPart::image_parts(&document)` traverses existing image parts. A writer needs package mutation support for adding a new image part and relationship, plus DrawingML generation for dimensions, non-visual properties, blip fill, and inline or anchored layout.
+```rust
+{{#include ../../listings/word/src/lib.rs:list_image_relationship_ids}}
+```
+
+This chapter does not yet publish a full picture writer. The remaining work is body markup: insert valid DrawingML for dimensions, non-visual properties, blip fill, and inline or anchored layout, then reference the image relationship id from that markup.
+
+In `ooxmlsdk`, `MainDocumentPart::image_parts(&document)` traverses existing image parts, while `related_parts_of_type::<_, ImagePart>(&document)` keeps the relationship id with each image part.

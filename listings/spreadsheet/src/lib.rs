@@ -3,10 +3,11 @@ use std::collections::BTreeMap;
 use std::io::Cursor;
 use std::path::Path;
 
+use ooxmlsdk::parts::ribbon_extensibility_part::RibbonExtensibilityPart;
 use ooxmlsdk::parts::spreadsheet_document::SpreadsheetDocument;
 use ooxmlsdk::parts::workbook_part::WorkbookPart;
 use ooxmlsdk::parts::worksheet_part::WorksheetPart;
-use ooxmlsdk::sdk::{OpenSettings, PackageOpenMode, SpreadsheetDocumentType};
+use ooxmlsdk::sdk::{OpenSettings, PackageOpenMode, SdkPart, SpreadsheetDocumentType};
 
 pub fn open_spreadsheet_read_only(path: &Path) -> Result<usize, Box<dyn std::error::Error>> {
   let document = SpreadsheetDocument::new_from_file_with_settings(path, lazy_settings())?;
@@ -145,6 +146,39 @@ pub fn get_hidden_worksheets(path: &Path) -> Result<Vec<String>, Box<dyn std::er
   Ok(extract_hidden_sheet_names(workbook_xml))
 }
 // ANCHOR_END: get_hidden_worksheets
+
+// ANCHOR: add_custom_ui_part
+pub fn add_custom_ui_part(
+  path: &Path,
+  relationship_id: &str,
+  custom_ui_xml: &[u8],
+) -> Result<(Vec<u8>, String), Box<dyn std::error::Error>> {
+  let mut document = SpreadsheetDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let custom_ui_part = document.add_new_part::<RibbonExtensibilityPart>(relationship_id)?;
+
+  custom_ui_part.set_data(&mut document, custom_ui_xml.to_vec())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok((buffer.into_inner(), relationship_id.to_string()))
+}
+// ANCHOR_END: add_custom_ui_part
+
+// ANCHOR: list_worksheet_relationship_ids
+pub fn list_worksheet_relationship_ids(
+  path: &Path,
+) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+  let document = SpreadsheetDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let workbook_part = document.workbook_part()?;
+
+  Ok(
+    workbook_part
+      .related_parts_of_type::<_, WorksheetPart>(&document)
+      .map(|related| related.relationship_id().to_string())
+      .collect(),
+  )
+}
+// ANCHOR_END: list_worksheet_relationship_ids
 
 fn lazy_settings() -> OpenSettings {
   OpenSettings {
@@ -458,6 +492,35 @@ mod tests {
     let sheets = get_hidden_worksheets(&fixture).expect("hidden worksheets");
 
     assert_eq!(sheets, vec!["Hidden Data"]);
+  }
+
+  #[test]
+  fn adds_custom_ui_part() {
+    let fixture = write_spreadsheet_fixture();
+    let custom_ui = br#"<customUI xmlns="http://schemas.microsoft.com/office/2006/01/customui"><ribbon/></customUI>"#;
+
+    let (bytes, relationship_id) =
+      add_custom_ui_part(&fixture, "rIdCustomUi1", custom_ui).expect("add custom UI");
+
+    assert_eq!(relationship_id, "rIdCustomUi1");
+    let reopened =
+      SpreadsheetDocument::new(Cursor::new(bytes)).expect("reopen spreadsheet with custom UI");
+    let custom_part = reopened
+      .related_parts_of_type::<RibbonExtensibilityPart>()
+      .find(|related| related.relationship_id() == "rIdCustomUi1")
+      .map(|related| related.into_part())
+      .expect("custom UI part");
+
+    assert_eq!(custom_part.data(&reopened), Some(custom_ui.as_slice()));
+  }
+
+  #[test]
+  fn lists_worksheet_relationship_ids() {
+    let fixture = write_spreadsheet_fixture();
+
+    let ids = list_worksheet_relationship_ids(&fixture).expect("worksheet relationship ids");
+
+    assert_eq!(ids, vec!["rId1", "rId2"]);
   }
 
   fn write_spreadsheet_fixture() -> std::path::PathBuf {

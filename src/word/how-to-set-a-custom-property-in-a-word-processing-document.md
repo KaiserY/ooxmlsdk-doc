@@ -16,14 +16,18 @@ Common value element names include `vt:lpwstr` for strings, `vt:filetime` for ti
 
 ## Rust workflow
 
-Application properties are read through a package-level part:
+Custom properties are written through a package-level `CustomFilePropertiesPart`. This tested listing creates the part when it is absent, writes one string property, and saves the package:
+
+```rust
+{{#include ../../listings/word/src/lib.rs:set_custom_string_property}}
+```
+
+Application properties are separate from custom properties and are read through the extended properties part:
 
 ```rust
 {{#include ../../listings/word/src/lib.rs:get_application_properties}}
 ```
 
-This chapter does not yet publish a custom property writer. A final implementation should create or update the custom properties part, allocate property ids, choose the correct value type, and save package metadata.
+The listing is deliberately narrow: it writes a single `vt:lpwstr` value. A full custom-property updater should preserve unrelated properties, allocate unique `pid` values, choose the correct value element for each type, and replace an existing property by name without duplicating it.
 
-When updating an existing property, replacing the whole property element is often simpler than mutating the old value because the value element name encodes the property type. After insertion or replacement, renumber `pid` values from 2 upward so they remain unique and stable for the saved part.
-
-In `ooxmlsdk`, the package model includes `CustomFilePropertiesPart`; writer coverage still needs a tested listing before this page publishes mutation code.
+When updating an existing property, replacing the whole property element is often simpler than mutating the old value because the value element name encodes the property type. After insertion or replacement, keep `pid` values unique and stable for the saved part.

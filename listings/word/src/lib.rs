@@ -2,8 +2,9 @@
 use std::io::Cursor;
 use std::path::Path;
 
+use ooxmlsdk::parts::image_part::ImagePart;
 use ooxmlsdk::parts::wordprocessing_document::WordprocessingDocument;
-use ooxmlsdk::sdk::{OpenSettings, PackageOpenMode, WordprocessingDocumentType};
+use ooxmlsdk::sdk::{OpenSettings, PackageOpenMode, SdkPart, WordprocessingDocumentType};
 
 pub fn open_word_read_only(path: &Path) -> Result<usize, Box<dyn std::error::Error>> {
   let document = WordprocessingDocument::new_from_file_with_settings(path, lazy_settings())?;
@@ -80,6 +81,86 @@ pub fn get_application_properties(
   Ok(extract_known_app_properties(xml))
 }
 // ANCHOR_END: get_application_properties
+
+// ANCHOR: add_image_part
+pub fn add_image_part(
+  path: &Path,
+  relationship_id: &str,
+  content_type: &str,
+  image_bytes: &[u8],
+) -> Result<(Vec<u8>, String), Box<dyn std::error::Error>> {
+  let mut document = WordprocessingDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let main_part = document.main_document_part()?;
+  let image_part =
+    main_part.add_image_part_with_id(&mut document, content_type.to_string(), relationship_id)?;
+
+  image_part.set_data(&mut document, image_bytes.to_vec())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok((buffer.into_inner(), relationship_id.to_string()))
+}
+// ANCHOR_END: add_image_part
+
+// ANCHOR: list_image_relationship_ids
+pub fn list_image_relationship_ids(path: &Path) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+  let document = WordprocessingDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let main_part = document.main_document_part()?;
+
+  Ok(
+    main_part
+      .related_parts_of_type::<_, ImagePart>(&document)
+      .map(|related| related.relationship_id().to_string())
+      .collect(),
+  )
+}
+// ANCHOR_END: list_image_relationship_ids
+
+// ANCHOR: convert_docm_to_docx
+pub fn convert_docm_to_docx(path: &Path) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = WordprocessingDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let main_part = document.main_document_part()?;
+
+  if let Some(vba_part) = main_part.vba_project_part(&document) {
+    main_part.delete_part(&mut document, vba_part)?;
+  }
+  document.change_document_type(WordprocessingDocumentType::Document)?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: convert_docm_to_docx
+
+// ANCHOR: set_custom_string_property
+pub fn set_custom_string_property(
+  path: &Path,
+  name: &str,
+  value: &str,
+) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = WordprocessingDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let custom_properties_part = match document.custom_file_properties_part() {
+    Some(part) => part,
+    None => document.add_custom_file_properties_part()?,
+  };
+  let name = escape_xml_text(name);
+  let value = escape_xml_text(value);
+  let xml = format!(
+    r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/custom-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
+  <property fmtid="{{D5CDD505-2E9C-101B-9397-08002B2CF9AE}}" pid="2" name="{name}">
+    <vt:lpwstr>{value}</vt:lpwstr>
+  </property>
+</Properties>"#
+  );
+
+  custom_properties_part.set_data(&mut document, xml.into_bytes())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: set_custom_string_property
 
 fn lazy_settings() -> OpenSettings {
   OpenSettings {
@@ -248,6 +329,76 @@ mod tests {
     );
   }
 
+  #[test]
+  fn adds_image_part_with_relationship_id() {
+    let fixture = write_word_fixture();
+    let image_bytes = b"\x89PNG\r\n\x1a\nimage bytes";
+
+    let (bytes, relationship_id) =
+      add_image_part(&fixture, "rIdImage1", "image/png", image_bytes).expect("add image part");
+
+    assert_eq!(relationship_id, "rIdImage1");
+    let reopened = WordprocessingDocument::new(Cursor::new(bytes)).expect("reopen with image");
+    let main_part = reopened.main_document_part().expect("main document part");
+    let image_part = main_part
+      .related_parts_of_type::<_, ImagePart>(&reopened)
+      .find(|related| related.relationship_id() == "rIdImage1")
+      .map(|related| related.into_part())
+      .expect("image part by relationship id");
+
+    assert_eq!(image_part.content_type(&reopened), Some("image/png"));
+    assert_eq!(image_part.data(&reopened), Some(image_bytes.as_slice()));
+  }
+
+  #[test]
+  fn lists_image_relationship_ids() {
+    let fixture = write_word_fixture();
+    let image_bytes = b"\x89PNG\r\n\x1a\nimage bytes";
+    let (bytes, _) =
+      add_image_part(&fixture, "rIdImage2", "image/png", image_bytes).expect("add image part");
+    let path = write_bytes_fixture("docx", bytes);
+
+    let ids = list_image_relationship_ids(&path).expect("image relationship ids");
+
+    assert_eq!(ids, vec!["rIdImage2"]);
+  }
+
+  #[test]
+  fn converts_docm_to_docx_package() {
+    let fixture = write_macro_enabled_word_fixture();
+
+    let bytes = convert_docm_to_docx(&fixture).expect("convert docm");
+
+    let reopened = WordprocessingDocument::new(Cursor::new(bytes)).expect("reopen converted docx");
+    let main_part = reopened.main_document_part().expect("main document part");
+    assert_eq!(
+      reopened.document_type(),
+      WordprocessingDocumentType::Document
+    );
+    assert!(main_part.vba_project_part(&reopened).is_none());
+  }
+
+  #[test]
+  fn sets_custom_string_property() {
+    let fixture = write_word_fixture();
+
+    let bytes =
+      set_custom_string_property(&fixture, "Reviewed", "yes & checked").expect("set property");
+
+    let reopened =
+      WordprocessingDocument::new(Cursor::new(bytes)).expect("reopen with custom property");
+    let custom_properties_part = reopened
+      .custom_file_properties_part()
+      .expect("custom properties part");
+    let xml = custom_properties_part
+      .data_as_str(&reopened)
+      .expect("custom properties XML")
+      .expect("custom properties data");
+
+    assert!(xml.contains(r#"name="Reviewed""#));
+    assert!(xml.contains("<vt:lpwstr>yes &amp; checked</vt:lpwstr>"));
+  }
+
   fn write_word_fixture() -> std::path::PathBuf {
     let path = std::env::temp_dir().join(format!(
       "ooxmlsdk-doc-word-{}-{}.docx",
@@ -360,6 +511,89 @@ mod tests {
       .expect("write styles");
 
     zip.finish().expect("finish fixture");
+    path
+  }
+
+  fn write_macro_enabled_word_fixture() -> std::path::PathBuf {
+    let path = std::env::temp_dir().join(format!(
+      "ooxmlsdk-doc-word-macro-{}-{}.docm",
+      std::process::id(),
+      FIXTURE_COUNTER.fetch_add(1, Ordering::Relaxed)
+    ));
+    let file = std::fs::File::create(&path).expect("create macro fixture");
+    let mut zip = zip::ZipWriter::new(file);
+    let options = zip::write::SimpleFileOptions::default();
+
+    zip
+      .start_file("[Content_Types].xml", options)
+      .expect("content types");
+    zip.write_all(
+      br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Default Extension="bin" ContentType="application/vnd.ms-office.vbaProject"/>
+  <Override PartName="/word/document.xml" ContentType="application/vnd.ms-word.document.macroEnabled.main+xml"/>
+</Types>"#,
+    )
+    .expect("write content types");
+
+    zip.add_directory("_rels", options).expect("rels dir");
+    zip
+      .start_file("_rels/.rels", options)
+      .expect("package rels");
+    zip.write_all(
+      br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+</Relationships>"#,
+    )
+    .expect("write package rels");
+
+    zip.add_directory("word", options).expect("word dir");
+    zip
+      .add_directory("word/_rels", options)
+      .expect("word rels dir");
+    zip
+      .start_file("word/_rels/document.xml.rels", options)
+      .expect("document rels");
+    zip.write_all(
+      br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rIdVba" Type="http://schemas.microsoft.com/office/2006/relationships/vbaProject" Target="vbaProject.bin"/>
+</Relationships>"#,
+    )
+    .expect("write document rels");
+
+    zip
+      .start_file("word/document.xml", options)
+      .expect("document");
+    zip
+      .write_all(
+        br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body><w:p><w:r><w:t>Macro enabled</w:t></w:r></w:p></w:body>
+</w:document>"#,
+      )
+      .expect("write document");
+
+    zip
+      .start_file("word/vbaProject.bin", options)
+      .expect("vba project");
+    zip.write_all(b"vba bytes").expect("write vba project");
+
+    zip.finish().expect("finish macro fixture");
+    path
+  }
+
+  fn write_bytes_fixture(extension: &str, bytes: Vec<u8>) -> std::path::PathBuf {
+    let path = std::env::temp_dir().join(format!(
+      "ooxmlsdk-doc-word-bytes-{}-{}.{}",
+      std::process::id(),
+      FIXTURE_COUNTER.fetch_add(1, Ordering::Relaxed),
+      extension
+    ));
+    std::fs::write(&path, bytes).expect("write bytes fixture");
     path
   }
 }

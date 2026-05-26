@@ -5,6 +5,7 @@ use std::path::Path;
 use ooxmlsdk::parts::presentation_document::PresentationDocument;
 use ooxmlsdk::parts::presentation_part::PresentationPart;
 use ooxmlsdk::parts::slide_part::SlidePart;
+use ooxmlsdk::sdk::MediaDataPartType;
 use ooxmlsdk::sdk::{OpenSettings, PackageOpenMode, PresentationDocumentType};
 
 pub fn open_presentation_read_only(path: &Path) -> Result<usize, Box<dyn std::error::Error>> {
@@ -149,6 +150,34 @@ pub fn get_slide_layout_xml(path: &Path) -> Result<Vec<String>, Box<dyn std::err
   Ok(layouts)
 }
 // ANCHOR_END: get_slide_layout_xml
+
+// ANCHOR: add_audio_media_references
+pub fn add_audio_media_references(
+  path: &Path,
+  audio_bytes: &[u8],
+) -> Result<(Vec<u8>, String, String), Box<dyn std::error::Error>> {
+  let mut document = PresentationDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let presentation_part = document.presentation_part()?;
+  let Some(slide_part) = presentation_part.slide_parts(&document).next() else {
+    return Err("presentation has no slide parts".into());
+  };
+
+  let media_part = document.create_media_data_part_by_type(MediaDataPartType::Wav)?;
+  media_part.set_data(&mut document, audio_bytes.to_vec())?;
+  let audio_relationship_id =
+    slide_part.add_audio_reference_relationship(&mut document, &media_part)?;
+  let media_relationship_id =
+    slide_part.add_media_reference_relationship(&mut document, &media_part)?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok((
+    buffer.into_inner(),
+    audio_relationship_id,
+    media_relationship_id,
+  ))
+}
+// ANCHOR_END: add_audio_media_references
 
 fn lazy_settings() -> OpenSettings {
   OpenSettings {
@@ -304,6 +333,39 @@ mod tests {
     assert_eq!(layouts.len(), 1);
     assert!(layouts[0].contains(r#"<p:sldLayout"#));
     assert!(layouts[0].contains(r#"type="title""#));
+  }
+
+  #[test]
+  fn adds_audio_media_references() {
+    let fixture = write_presentation_fixture();
+    let audio_bytes = b"RIFF....WAVEfmt audio bytes";
+
+    let (bytes, audio_relationship_id, media_relationship_id) =
+      add_audio_media_references(&fixture, audio_bytes).expect("add audio references");
+
+    assert_ne!(audio_relationship_id, media_relationship_id);
+    let reopened =
+      PresentationDocument::new(Cursor::new(bytes)).expect("reopen presentation with media");
+    let presentation_part = reopened.presentation_part().expect("presentation part");
+    let slide_part = presentation_part
+      .slide_parts(&reopened)
+      .next()
+      .expect("first slide");
+    let media_parts: Vec<_> = reopened.media_data_parts().collect();
+
+    assert_eq!(media_parts.len(), 1);
+    assert_eq!(media_parts[0].content_type(&reopened), Some("audio/wav"));
+    assert_eq!(media_parts[0].data(&reopened), Some(audio_bytes.as_slice()));
+    assert!(
+      slide_part
+        .data_part_reference_relationships(&reopened)
+        .any(|relationship| relationship.id() == audio_relationship_id)
+    );
+    assert!(
+      slide_part
+        .data_part_reference_relationships(&reopened)
+        .any(|relationship| relationship.id() == media_relationship_id)
+    );
   }
 
   fn write_presentation_fixture() -> std::path::PathBuf {

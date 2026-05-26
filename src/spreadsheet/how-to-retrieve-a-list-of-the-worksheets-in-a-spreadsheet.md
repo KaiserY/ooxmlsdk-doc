@@ -8,6 +8,12 @@ Worksheet names are stored in the workbook part, not inside the worksheet parts.
 {{#include ../../listings/spreadsheet/src/lib.rs:list_worksheets}}
 ```
 
+When you need the relationship ids as well as the sheet names, use `related_parts_of_type` at the workbook part boundary and keep those ids aligned with the `r:id` values in workbook XML:
+
+```rust
+{{#include ../../listings/spreadsheet/src/lib.rs:list_worksheet_relationship_ids}}
+```
+
 The helper opens the workbook part, reads `xl/workbook.xml`, and extracts each `<sheet name="..."/>` value. The same workbook XML also contains `sheetId`, `r:id`, and optional state attributes such as `hidden`.
 
 The returned list can be empty only for an invalid or unusual workbook; a well-formed spreadsheet normally has at least one sheet entry.
