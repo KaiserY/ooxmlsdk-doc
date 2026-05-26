@@ -16,12 +16,12 @@ For shared strings, first locate or create the shared string table. If the targe
 
 ## Rust workflow
 
-The current tested example reads shared-string-backed cells:
-
 ```rust
-{{#include ../../listings/spreadsheet/src/lib.rs:get_cell_values}}
+{{#include ../../listings/spreadsheet/src/lib.rs:insert_text_into_cell}}
 ```
 
-This chapter does not yet publish an insertion writer. A final writer should either add an inline string or update the shared string table, then insert or update the cell in row and column order.
+This listing writes an inline string cell. That avoids rewriting the shared string table, which is often the safer first implementation when inserting a small number of values.
 
-When inserting the cell markup, preserve worksheet ordering. Find or create the target row, then place the cell before the first existing cell whose column comes after the target column. If a cell already exists at the requested address, update that cell instead of creating a duplicate `c` element with the same reference.
+When expanding this into a general writer, preserve worksheet ordering. Find or create the target row, then place the cell before the first existing cell whose column comes after the target column. If a cell already exists at the requested address, update that cell instead of creating a duplicate `c` element with the same reference.
+
+If your workbook policy requires shared strings, locate or create the shared string table, append or reuse the text, and write a `t="s"` cell with the shared string index instead.

@@ -31,12 +31,10 @@ In `ooxmlsdk`, generated schema types include `Table`, `TableProperties`, `Table
 
 ## Rust workflow
 
-Read the current body content before inserting:
-
 ```rust
-{{#include ../../listings/word/src/lib.rs:get_document_text}}
+{{#include ../../listings/word/src/lib.rs:insert_table}}
 ```
 
-This chapter does not yet publish a table writer. A final implementation should create table properties, rows, cells, cell paragraphs, and insert the table without moving or losing `<w:sectPr/>`.
+The listing creates a simple table from string rows and cells, then inserts it before the body section properties (`<w:sectPr/>`) if that element is present at the end of the body.
 
-The table should normally be inserted before the body section properties (`<w:sectPr/>`) if that element is present at the end of the body. Appending after section properties can produce invalid or surprising document structure.
+A production table writer can extend this with table properties, borders, widths, grid columns, and style ids. Appending after section properties can produce invalid or surprising document structure.

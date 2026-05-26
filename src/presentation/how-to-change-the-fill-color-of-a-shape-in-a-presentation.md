@@ -36,12 +36,8 @@ The upstream sample changes the first shape on the first slide, so the test file
 
 ## Rust workflow
 
-Use `PresentationDocument` to find the slide, then read the slide XML:
-
 ```rust
-{{#include ../../listings/presentation/src/lib.rs:get_slide_text}}
+{{#include ../../listings/presentation/src/lib.rs:change_first_shape_fill_color}}
 ```
 
-For a real writer, do not use broad text replacement across the whole slide. Parse the slide XML, locate the intended shape by id or name, update only its fill subtree, and then write the part back through the package.
-
-This chapter does not yet include a tested writer because the safe behavior depends on shape selection, existing fill variants, and XML namespace preservation. Add the implementation under `listings/` with fixture coverage before documenting it as final API.
+The listing updates the first shape on the selected slide. For a broader writer, do not use broad text replacement across the whole slide. Parse the slide XML, locate the intended shape by id or name, update only its fill subtree, and then write the part back through the package.

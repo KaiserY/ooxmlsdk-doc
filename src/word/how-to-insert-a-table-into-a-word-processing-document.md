@@ -31,13 +31,9 @@ Tables are represented by `tbl` elements. A table can contain table-wide propert
 
 ## Rust workflow
 
-Use the same package traversal as other main-document operations:
-
 ```rust
-{{#include ../../listings/word/src/lib.rs:open_word_read_only}}
+{{#include ../../listings/word/src/lib.rs:insert_table}}
 ```
-
-This chapter shares the same implementation boundary as [Add tables to word processing documents](how-to-add-tables-to-word-processing-documents.md): writer code should be added only with a fixture that verifies the saved package.
 
 The sample flow creates table properties, adds border elements, creates a row, creates a cell with width properties and a paragraph/run/text child, then appends the table to the document body. If cloning cells, clone XML structure carefully so relationship-backed content is not duplicated incorrectly.
 

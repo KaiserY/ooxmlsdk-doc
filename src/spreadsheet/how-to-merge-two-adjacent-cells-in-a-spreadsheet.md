@@ -18,12 +18,10 @@ The range is expressed with normal cell references such as `A1:B1`. Parse a cell
 
 ## Rust workflow
 
-Read the worksheet XML, then insert or update `<mergeCells/>` in the correct worksheet location:
-
 ```rust
-{{#include ../../listings/spreadsheet/src/lib.rs:get_worksheet_xml}}
+{{#include ../../listings/spreadsheet/src/lib.rs:merge_adjacent_cells}}
 ```
 
-This chapter does not yet publish a merge writer. A safe implementation must preserve existing merged ranges and avoid overlapping merges.
+The listing checks that the two endpoints are adjacent, appends the merge range, and updates the `mergeCells` count when the collection already exists. A more complete writer should also reject ranges that overlap existing merged ranges.
 
 Only one cell's displayed content is preserved by spreadsheet applications after a merge. For left-to-right sheets, that is typically the upper-left cell in the merged range; for right-to-left sheets, applications can preserve the upper-right value. Avoid relying on values from the other cells in the range.

@@ -162,6 +162,74 @@ pub fn set_custom_string_property(
 }
 // ANCHOR_END: set_custom_string_property
 
+// ANCHOR: add_paragraph_text
+pub fn add_paragraph_text(path: &Path, text: &str) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = WordprocessingDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let main_part = document.main_document_part()?;
+  let xml = main_part.data_as_str(&document)?.unwrap_or_default();
+  let paragraph = paragraph_xml(text);
+  let updated_xml = insert_before_section_properties(xml, &paragraph)?;
+
+  main_part.set_data(&mut document, updated_xml.into_bytes())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: add_paragraph_text
+
+// ANCHOR: insert_table
+pub fn insert_table(path: &Path, rows: &[&[&str]]) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = WordprocessingDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let main_part = document.main_document_part()?;
+  let xml = main_part.data_as_str(&document)?.unwrap_or_default();
+  let table = table_xml(rows);
+  let updated_xml = insert_before_section_properties(xml, &table)?;
+
+  main_part.set_data(&mut document, updated_xml.into_bytes())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: insert_table
+
+// ANCHOR: change_text_in_first_table_cell
+pub fn change_text_in_first_table_cell(
+  path: &Path,
+  new_text: &str,
+) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = WordprocessingDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let main_part = document.main_document_part()?;
+  let xml = main_part.data_as_str(&document)?.unwrap_or_default();
+  let updated_xml = replace_first_table_cell_text(xml, new_text)?;
+
+  main_part.set_data(&mut document, updated_xml.into_bytes())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: change_text_in_first_table_cell
+
+// ANCHOR: set_first_run_font
+pub fn set_first_run_font(
+  path: &Path,
+  font_name: &str,
+) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = WordprocessingDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let main_part = document.main_document_part()?;
+  let xml = main_part.data_as_str(&document)?.unwrap_or_default();
+  let updated_xml = set_first_run_fonts(xml, font_name)?;
+
+  main_part.set_data(&mut document, updated_xml.into_bytes())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: set_first_run_font
+
 fn lazy_settings() -> OpenSettings {
   OpenSettings {
     open_mode: PackageOpenMode::Lazy,
@@ -174,6 +242,107 @@ fn escape_xml_text(value: &str) -> String {
     .replace('&', "&amp;")
     .replace('<', "&lt;")
     .replace('>', "&gt;")
+}
+
+fn escape_xml_attr(value: &str) -> String {
+  escape_xml_text(value).replace('"', "&quot;")
+}
+
+fn paragraph_xml(text: &str) -> String {
+  let text = escape_xml_text(text);
+  format!(r#"<w:p><w:r><w:t>{text}</w:t></w:r></w:p>"#)
+}
+
+fn table_xml(rows: &[&[&str]]) -> String {
+  let mut table = String::from("<w:tbl>");
+  for row in rows {
+    table.push_str("<w:tr>");
+    for cell in *row {
+      table.push_str("<w:tc>");
+      table.push_str(&paragraph_xml(cell));
+      table.push_str("</w:tc>");
+    }
+    table.push_str("</w:tr>");
+  }
+  table.push_str("</w:tbl>");
+  table
+}
+
+fn insert_before_section_properties(
+  document_xml: &str,
+  element_xml: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+  let insert_at = document_xml
+    .find("<w:sectPr")
+    .or_else(|| document_xml.find("</w:body>"))
+    .ok_or("document body not found")?;
+  let mut updated = String::with_capacity(document_xml.len() + element_xml.len());
+  updated.push_str(&document_xml[..insert_at]);
+  updated.push_str(element_xml);
+  updated.push_str(&document_xml[insert_at..]);
+  Ok(updated)
+}
+
+fn replace_first_table_cell_text(
+  document_xml: &str,
+  new_text: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+  let table_start = document_xml.find("<w:tbl").ok_or("table not found")?;
+  let table_end = document_xml[table_start..]
+    .find("</w:tbl>")
+    .map(|index| table_start + index + "</w:tbl>".len())
+    .ok_or("table end not found")?;
+  let table_xml = &document_xml[table_start..table_end];
+  let text_start = find_text_start(table_xml).ok_or("table text not found")?;
+  let text_open_end = table_xml[text_start..]
+    .find('>')
+    .map(|index| text_start + index + 1)
+    .ok_or("table text start not found")?;
+  let text_end = table_xml[text_open_end..]
+    .find("</w:t>")
+    .map(|index| text_open_end + index)
+    .ok_or("table text end not found")?;
+  let new_text = escape_xml_text(new_text);
+
+  let absolute_text_open_end = table_start + text_open_end;
+  let absolute_text_end = table_start + text_end;
+  let mut updated = String::with_capacity(document_xml.len() + new_text.len());
+  updated.push_str(&document_xml[..absolute_text_open_end]);
+  updated.push_str(&new_text);
+  updated.push_str(&document_xml[absolute_text_end..]);
+  Ok(updated)
+}
+
+fn set_first_run_fonts(
+  document_xml: &str,
+  font_name: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+  let run_start = document_xml.find("<w:r>").ok_or("run not found")?;
+  let run_open_end = run_start + "<w:r>".len();
+  let run_end = document_xml[run_open_end..]
+    .find("</w:r>")
+    .map(|index| run_open_end + index)
+    .ok_or("run end not found")?;
+  let run_inner = &document_xml[run_open_end..run_end];
+  let font_name = escape_xml_attr(font_name);
+  let run_fonts = format!(r#"<w:rFonts w:ascii="{font_name}" w:hAnsi="{font_name}"/>"#);
+
+  let updated_run_inner = if let Some(properties_start) = run_inner.find("<w:rPr>") {
+    let insert_at = properties_start + "<w:rPr>".len();
+    let mut value = String::with_capacity(run_inner.len() + run_fonts.len());
+    value.push_str(&run_inner[..insert_at]);
+    value.push_str(&run_fonts);
+    value.push_str(&run_inner[insert_at..]);
+    value
+  } else {
+    format!("<w:rPr>{run_fonts}</w:rPr>{run_inner}")
+  };
+
+  let mut updated = String::with_capacity(document_xml.len() + run_fonts.len());
+  updated.push_str(&document_xml[..run_open_end]);
+  updated.push_str(&updated_run_inner);
+  updated.push_str(&document_xml[run_end..]);
+  Ok(updated)
 }
 
 fn extract_text_values(xml: &str) -> Vec<String> {
@@ -397,6 +566,75 @@ mod tests {
 
     assert!(xml.contains(r#"name="Reviewed""#));
     assert!(xml.contains("<vt:lpwstr>yes &amp; checked</vt:lpwstr>"));
+  }
+
+  #[test]
+  fn adds_paragraph_text_before_section_properties() {
+    let fixture = write_word_fixture();
+
+    let bytes = add_paragraph_text(&fixture, "Added paragraph").expect("add paragraph");
+
+    let reopened = WordprocessingDocument::new(Cursor::new(bytes)).expect("reopen document");
+    let main_part = reopened.main_document_part().expect("main document part");
+    let xml = main_part
+      .data_as_str(&reopened)
+      .expect("document xml")
+      .expect("document data");
+
+    assert!(xml.contains("<w:t>Added paragraph</w:t></w:r></w:p><w:sectPr/>"));
+  }
+
+  #[test]
+  fn inserts_table_before_section_properties() {
+    let fixture = write_word_fixture();
+
+    let bytes = insert_table(&fixture, &[&["A1", "B1"], &["A2", "B2"]]).expect("insert table");
+
+    let reopened = WordprocessingDocument::new(Cursor::new(bytes)).expect("reopen document");
+    let main_part = reopened.main_document_part().expect("main document part");
+    let xml = main_part
+      .data_as_str(&reopened)
+      .expect("document xml")
+      .expect("document data");
+
+    assert!(xml.contains("<w:tbl><w:tr><w:tc><w:p><w:r><w:t>A1</w:t>"));
+    assert!(xml.contains("<w:t>B2</w:t></w:r></w:p></w:tc></w:tr></w:tbl><w:sectPr/>"));
+  }
+
+  #[test]
+  fn changes_text_in_first_table_cell() {
+    let fixture = write_word_fixture();
+
+    let bytes =
+      change_text_in_first_table_cell(&fixture, "Updated cell").expect("change table text");
+
+    let reopened = WordprocessingDocument::new(Cursor::new(bytes)).expect("reopen document");
+    let main_part = reopened.main_document_part().expect("main document part");
+    let xml = main_part
+      .data_as_str(&reopened)
+      .expect("document xml")
+      .expect("document data");
+
+    assert!(xml.contains("<w:t>Updated cell</w:t>"));
+    assert!(!xml.contains("<w:t>Cell text</w:t>"));
+  }
+
+  #[test]
+  fn sets_first_run_font() {
+    let fixture = write_word_fixture();
+
+    let bytes = set_first_run_font(&fixture, "Arial").expect("set font");
+
+    let reopened = WordprocessingDocument::new(Cursor::new(bytes)).expect("reopen document");
+    let main_part = reopened.main_document_part().expect("main document part");
+    let xml = main_part
+      .data_as_str(&reopened)
+      .expect("document xml")
+      .expect("document data");
+
+    assert!(
+      xml.contains(r#"<w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/></w:rPr><w:t>Hello</w:t>"#)
+    );
   }
 
   fn write_word_fixture() -> std::path::PathBuf {

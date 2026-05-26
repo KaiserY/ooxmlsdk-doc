@@ -179,6 +179,71 @@ pub fn add_audio_media_references(
 }
 // ANCHOR_END: add_audio_media_references
 
+// ANCHOR: move_slide_to_position
+pub fn move_slide_to_position(
+  path: &Path,
+  from_index: usize,
+  to_index: usize,
+) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = PresentationDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let presentation_part = document.presentation_part()?;
+  let xml = presentation_part
+    .data_as_str(&document)?
+    .unwrap_or_default();
+  let updated_xml = reorder_slide_ids(xml, from_index, to_index)?;
+
+  presentation_part.set_data(&mut document, updated_xml.into_bytes())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: move_slide_to_position
+
+// ANCHOR: add_fade_transition
+pub fn add_fade_transition(
+  path: &Path,
+  slide_index: usize,
+) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = PresentationDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let presentation_part = document.presentation_part()?;
+  let Some(slide_part) = presentation_part.slide_parts(&document).nth(slide_index) else {
+    return Err(format!("slide index {slide_index} not found").into());
+  };
+  let xml = slide_part.data_as_str(&document)?.unwrap_or_default();
+  let updated_xml =
+    replace_or_insert_transition(xml, r#"<p:transition spd="fast"><p:fade/></p:transition>"#)?;
+
+  slide_part.set_data(&mut document, updated_xml.into_bytes())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: add_fade_transition
+
+// ANCHOR: change_first_shape_fill_color
+pub fn change_first_shape_fill_color(
+  path: &Path,
+  slide_index: usize,
+  rgb_hex: &str,
+) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = PresentationDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let presentation_part = document.presentation_part()?;
+  let Some(slide_part) = presentation_part.slide_parts(&document).nth(slide_index) else {
+    return Err(format!("slide index {slide_index} not found").into());
+  };
+  let xml = slide_part.data_as_str(&document)?.unwrap_or_default();
+  let updated_xml = set_first_shape_solid_fill(xml, rgb_hex)?;
+
+  slide_part.set_data(&mut document, updated_xml.into_bytes())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: change_first_shape_fill_color
+
 fn lazy_settings() -> OpenSettings {
   OpenSettings {
     open_mode: PackageOpenMode::Lazy,
@@ -228,6 +293,147 @@ fn extract_hyperlink_relationship_ids(xml: &str) -> Vec<String> {
   }
 
   ids
+}
+
+fn reorder_slide_ids(
+  presentation_xml: &str,
+  from_index: usize,
+  to_index: usize,
+) -> Result<String, Box<dyn std::error::Error>> {
+  let Some(list_start) = presentation_xml.find("<p:sldIdLst>") else {
+    return Err("presentation has no slide id list".into());
+  };
+  let list_content_start = list_start + "<p:sldIdLst>".len();
+  let Some(list_end_offset) = presentation_xml[list_content_start..].find("</p:sldIdLst>") else {
+    return Err("presentation slide id list is not closed".into());
+  };
+  let list_end = list_content_start + list_end_offset;
+  let list_content = &presentation_xml[list_content_start..list_end];
+  let mut slide_ids = collect_self_closing_elements(list_content, "<p:sldId");
+  if from_index >= slide_ids.len() || to_index >= slide_ids.len() {
+    return Err("slide index out of range".into());
+  }
+
+  let moved = slide_ids.remove(from_index);
+  slide_ids.insert(to_index, moved);
+
+  let mut updated = String::with_capacity(presentation_xml.len());
+  updated.push_str(&presentation_xml[..list_content_start]);
+  updated.push_str(&slide_ids.join(""));
+  updated.push_str(&presentation_xml[list_end..]);
+  Ok(updated)
+}
+
+fn replace_or_insert_transition(
+  slide_xml: &str,
+  transition_xml: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+  if let Some((start, end)) = find_element_range(slide_xml, "<p:transition", "</p:transition>") {
+    let mut updated = String::with_capacity(slide_xml.len() + transition_xml.len());
+    updated.push_str(&slide_xml[..start]);
+    updated.push_str(transition_xml);
+    updated.push_str(&slide_xml[end..]);
+    return Ok(updated);
+  }
+
+  let Some(common_slide_end) = slide_xml.find("</p:cSld>") else {
+    return Err("slide has no common slide data".into());
+  };
+  let insert_at = common_slide_end + "</p:cSld>".len();
+  let mut updated = String::with_capacity(slide_xml.len() + transition_xml.len());
+  updated.push_str(&slide_xml[..insert_at]);
+  updated.push_str(transition_xml);
+  updated.push_str(&slide_xml[insert_at..]);
+  Ok(updated)
+}
+
+fn set_first_shape_solid_fill(
+  slide_xml: &str,
+  rgb_hex: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+  if rgb_hex.len() != 6 || !rgb_hex.chars().all(|ch| ch.is_ascii_hexdigit()) {
+    return Err("rgb_hex must be six hexadecimal digits".into());
+  }
+  let shape_start = slide_xml.find("<p:sp>").ok_or("shape not found")?;
+  let shape_end = slide_xml[shape_start..]
+    .find("</p:sp>")
+    .map(|index| shape_start + index + "</p:sp>".len())
+    .ok_or("shape end not found")?;
+  let shape_xml = &slide_xml[shape_start..shape_end];
+  let solid_fill = format!(r#"<a:solidFill><a:srgbClr val="{rgb_hex}"/></a:solidFill>"#);
+
+  let updated_shape =
+    if let Some((sppr_start, sppr_end)) = find_element_range(shape_xml, "<p:spPr", "</p:spPr>") {
+      let sppr_xml = &shape_xml[sppr_start..sppr_end];
+      if let Some((fill_start, fill_end)) =
+        find_element_range(sppr_xml, "<a:solidFill", "</a:solidFill>")
+      {
+        let mut updated_sppr = String::with_capacity(sppr_xml.len() + solid_fill.len());
+        updated_sppr.push_str(&sppr_xml[..fill_start]);
+        updated_sppr.push_str(&solid_fill);
+        updated_sppr.push_str(&sppr_xml[fill_end..]);
+        let mut updated_shape = String::with_capacity(shape_xml.len() + solid_fill.len());
+        updated_shape.push_str(&shape_xml[..sppr_start]);
+        updated_shape.push_str(&updated_sppr);
+        updated_shape.push_str(&shape_xml[sppr_end..]);
+        updated_shape
+      } else {
+        let insert_at = sppr_xml
+          .find('>')
+          .ok_or("shape properties start not found")?
+          + 1;
+        let mut updated_sppr = String::with_capacity(sppr_xml.len() + solid_fill.len());
+        updated_sppr.push_str(&sppr_xml[..insert_at]);
+        updated_sppr.push_str(&solid_fill);
+        updated_sppr.push_str(&sppr_xml[insert_at..]);
+        let mut updated_shape = String::with_capacity(shape_xml.len() + solid_fill.len());
+        updated_shape.push_str(&shape_xml[..sppr_start]);
+        updated_shape.push_str(&updated_sppr);
+        updated_shape.push_str(&shape_xml[sppr_end..]);
+        updated_shape
+      }
+    } else {
+      let insert_at = shape_xml
+        .find("<p:txBody")
+        .ok_or("shape text body not found")?;
+      let mut updated_shape = String::with_capacity(shape_xml.len() + solid_fill.len() + 15);
+      updated_shape.push_str(&shape_xml[..insert_at]);
+      updated_shape.push_str("<p:spPr>");
+      updated_shape.push_str(&solid_fill);
+      updated_shape.push_str("</p:spPr>");
+      updated_shape.push_str(&shape_xml[insert_at..]);
+      updated_shape
+    };
+
+  let mut updated = String::with_capacity(slide_xml.len() + updated_shape.len());
+  updated.push_str(&slide_xml[..shape_start]);
+  updated.push_str(&updated_shape);
+  updated.push_str(&slide_xml[shape_end..]);
+  Ok(updated)
+}
+
+fn collect_self_closing_elements(xml: &str, start_pattern: &str) -> Vec<String> {
+  let mut elements = Vec::new();
+  let mut rest = xml;
+  while let Some(start) = rest.find(start_pattern) {
+    rest = &rest[start..];
+    let Some(end) = rest.find("/>") else {
+      break;
+    };
+    elements.push(rest[..end + 2].to_string());
+    rest = &rest[end + 2..];
+  }
+  elements
+}
+
+fn find_element_range(xml: &str, start_pattern: &str, end_pattern: &str) -> Option<(usize, usize)> {
+  let start = xml.find(start_pattern)?;
+  let open_end = xml[start..].find('>')? + start + 1;
+  if xml[open_end - 2..open_end].starts_with('/') {
+    return Some((start, open_end));
+  }
+  let end = xml[open_end..].find(end_pattern)? + open_end + end_pattern.len();
+  Some((start, end))
 }
 
 fn extract_attr<'a>(tag: &'a str, name: &str) -> Option<&'a str> {
@@ -365,6 +571,67 @@ mod tests {
       slide_part
         .data_part_reference_relationships(&reopened)
         .any(|relationship| relationship.id() == media_relationship_id)
+    );
+  }
+
+  #[test]
+  fn moves_slide_to_new_position() {
+    let fixture = write_presentation_fixture();
+
+    let bytes = move_slide_to_position(&fixture, 1, 0).expect("move slide");
+
+    let reopened = PresentationDocument::new(Cursor::new(bytes)).expect("reopen presentation");
+    let presentation_part = reopened.presentation_part().expect("presentation part");
+    let xml = presentation_part
+      .data_as_str(&reopened)
+      .expect("presentation xml")
+      .expect("presentation data");
+    let first = xml.find(r#"id="257""#).expect("second slide id");
+    let second = xml.find(r#"id="256""#).expect("first slide id");
+
+    assert!(first < second);
+    assert_eq!(presentation_part.slide_parts(&reopened).count(), 2);
+  }
+
+  #[test]
+  fn adds_fade_transition() {
+    let fixture = write_presentation_fixture();
+
+    let bytes = add_fade_transition(&fixture, 0).expect("add transition");
+
+    let reopened = PresentationDocument::new(Cursor::new(bytes)).expect("reopen presentation");
+    let presentation_part = reopened.presentation_part().expect("presentation part");
+    let slide_part = presentation_part
+      .slide_parts(&reopened)
+      .next()
+      .expect("first slide");
+    let xml = slide_part
+      .data_as_str(&reopened)
+      .expect("slide xml")
+      .expect("slide data");
+
+    assert!(xml.contains(r#"<p:transition spd="fast"><p:fade/></p:transition>"#));
+  }
+
+  #[test]
+  fn changes_first_shape_fill_color() {
+    let fixture = write_presentation_fixture();
+
+    let bytes = change_first_shape_fill_color(&fixture, 0, "FF0000").expect("change fill");
+
+    let reopened = PresentationDocument::new(Cursor::new(bytes)).expect("reopen presentation");
+    let presentation_part = reopened.presentation_part().expect("presentation part");
+    let slide_part = presentation_part
+      .slide_parts(&reopened)
+      .next()
+      .expect("first slide");
+    let xml = slide_part
+      .data_as_str(&reopened)
+      .expect("slide xml")
+      .expect("slide data");
+
+    assert!(
+      xml.contains(r#"<p:spPr><a:solidFill><a:srgbClr val="FF0000"/></a:solidFill></p:spPr>"#)
     );
   }
 

@@ -16,14 +16,10 @@ For a mixed English and Arabic run, for example, ASCII characters can use the AS
 
 ## Rust workflow
 
-Read text runs before selecting the target:
-
 ```rust
-{{#include ../../listings/word/src/lib.rs:get_document_text}}
+{{#include ../../listings/word/src/lib.rs:set_first_run_font}}
 ```
 
-This chapter does not yet publish a font writer. A correct implementation should preserve existing run properties and update only the selected run.
-
-If the selected run has no run properties, create `rPr` and prepend it before run content. If it already has run properties, update or add only the `rFonts` child so other properties such as bold, italic, color, and style remain intact.
+The listing updates the first run. If the selected run has no run properties, it creates `rPr` and prepends it before run content. If it already has run properties, a complete writer should update or add only the `rFonts` child so other properties such as bold, italic, color, and style remain intact.
 
 In `ooxmlsdk`, generated schema types include `RunProperties`, `RunFonts`, `Run`, and `Text`.

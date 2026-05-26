@@ -19,12 +19,8 @@ Choose the next id by scanning the existing workbook `sheetId` values and adding
 
 ## Rust workflow
 
-Read the existing worksheet list before choosing a new name and id:
-
 ```rust
-{{#include ../../listings/spreadsheet/src/lib.rs:list_worksheets}}
+{{#include ../../listings/spreadsheet/src/lib.rs:insert_new_worksheet}}
 ```
 
-This chapter does not yet publish an insertion writer. A complete example must update workbook XML, relationships, content type overrides, and save behavior together.
-
-This page remains structural until there is a tested writer listing. The important invariant is that workbook XML, workbook relationships, and package content types are saved together; updating only `<sheets/>` leaves a workbook entry that points nowhere.
+The listing creates the worksheet part from the workbook part, initializes it with an empty `<sheetData/>`, reads the new relationship id, appends the matching `<sheet/>` entry, and saves the package. The important invariant is that workbook XML, workbook relationships, and package content types are saved together; updating only `<sheets/>` leaves a workbook entry that points nowhere.

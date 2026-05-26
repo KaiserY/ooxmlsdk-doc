@@ -14,14 +14,10 @@ The main document part contains the text of the document as WordprocessingML. Op
 
 ## Rust workflow
 
-Read the current document text first:
-
 ```rust
-{{#include ../../listings/word/src/lib.rs:get_document_text}}
+{{#include ../../listings/word/src/lib.rs:add_paragraph_text}}
 ```
 
-This chapter does not yet publish a text writer. A safe implementation should parse the body XML, insert a valid paragraph or run, preserve section properties, and save the package through `ooxmlsdk`.
+The listing appends a paragraph before a trailing `<w:sectPr/>` if the body has section properties. A broader writer should also handle documents with missing or unusual body structure, and can build the paragraph from generated schema types instead of raw XML strings.
 
-When appending a paragraph to the document body, insert it before a trailing `<w:sectPr/>` if the body has section properties. The paragraph itself should be built from `Paragraph`, `Run`, and `Text` equivalents, with escaping handled by XML serialization rather than string concatenation.
-
-Unlike the upstream .NET SDK's AutoSave behavior, this book should show explicit save behavior once a writer listing is added.
+Unlike the upstream .NET SDK's AutoSave behavior, this book shows explicit save behavior through `document.save(...)`.

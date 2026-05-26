@@ -31,13 +31,11 @@ Tables are block-level content in the document body. A table (`tbl`) contains ta
 
 ## Rust workflow
 
-The document text helper includes table cell text:
-
 ```rust
-{{#include ../../listings/word/src/lib.rs:get_document_text}}
+{{#include ../../listings/word/src/lib.rs:change_text_in_first_table_cell}}
 ```
 
-This chapter does not yet publish a table text writer. Avoid broad string replacement across `document.xml`; parse table boundaries and update only the target cell content.
+The listing scopes the edit to the first table and replaces the first text element in that table. Avoid broad string replacement across `document.xml`; parse table boundaries and update only the target cell content.
 
 The upstream sample targets the first table, second row, and third cell, then replaces text in the first run of the first paragraph. A production Rust API should make table, row, and cell selection explicit, handle missing rows or cells as errors, and decide whether replacing text should preserve existing runs or rebuild the cell paragraph.
 

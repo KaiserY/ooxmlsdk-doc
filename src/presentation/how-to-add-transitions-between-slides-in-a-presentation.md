@@ -48,10 +48,8 @@ When documenting a writer for this page, include both the richer choice and a fa
 
 ## Rust workflow
 
-Open the presentation and locate the target slide through the package graph:
-
 ```rust
-{{#include ../../listings/presentation/src/lib.rs:get_slide_text}}
+{{#include ../../listings/presentation/src/lib.rs:add_fade_transition}}
 ```
 
-This page does not yet include a tested transition writer. A safe implementation should parse the slide XML, insert or replace only the `<p:transition/>` element, preserve the rest of the slide, and verify round-trip save behavior.
+The listing inserts or replaces only the `<p:transition/>` element and preserves the rest of the slide XML. For richer Office-version-specific transition markup, include a compatibility fallback and test the selected `mce` behavior.

@@ -18,10 +18,8 @@ The upstream sample treats both `from` and `to` as zero-based indexes. It first 
 
 ## Rust workflow
 
-Use the package model to inspect the current order and slide count:
-
 ```rust
-{{#include ../../listings/presentation/src/lib.rs:count_slides}}
+{{#include ../../listings/presentation/src/lib.rs:move_slide_to_position}}
 ```
 
-This chapter does not yet include a tested writer. A final implementation should parse `ppt/presentation.xml`, reorder only `<p:sldId/>` children, preserve ids and namespaces, save the package, and verify that slide relationships still resolve.
+The listing reorders only the `<p:sldId/>` children, preserves the slide ids and relationship ids, saves the package, and verifies that slide relationships still resolve.

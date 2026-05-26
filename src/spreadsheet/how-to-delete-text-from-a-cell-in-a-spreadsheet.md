@@ -14,10 +14,10 @@ The upstream sample also removes the shared string table entry when no other cel
 
 ## Rust workflow
 
-Read cell values first so you know which cell and storage form you are editing:
-
 ```rust
-{{#include ../../listings/spreadsheet/src/lib.rs:get_cell_values}}
+{{#include ../../listings/spreadsheet/src/lib.rs:delete_text_from_cell}}
 ```
 
-This chapter does not yet publish a deletion writer. A safe writer must update only the target cell, preserve row ordering, and decide whether unused shared string entries should remain.
+This listing clears the target cell content while leaving the worksheet row and shared string table intact. That keeps unrelated shared string indexes stable.
+
+If your application needs to compact the shared string table, treat that as a separate workbook-wide rewrite: remove only unused `si` entries and update every affected `t="s"` cell index in every worksheet.
