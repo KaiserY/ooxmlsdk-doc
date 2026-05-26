@@ -28,10 +28,10 @@ Data bars use conditional-format value objects (`cfvo`) for minimum and maximum 
 
 ## Rust workflow
 
-Read the worksheet XML through the package and inspect conditional formatting nodes:
+Open the worksheet part and append a `cellIs` rule with the next worksheet priority:
 
 ```rust
-{{#include ../../listings/spreadsheet/src/lib.rs:get_worksheet_xml}}
+{{#include ../../listings/spreadsheet/src/lib.rs:add_greater_than_conditional_formatting}}
 ```
 
-This chapter does not yet publish a writer. A safe conditional formatting writer must update worksheet rules, preserve priority ordering, and ensure any referenced differential formats exist in the styles part.
+Rules that reference `dxfId` also need matching differential formatting in the styles part. The example above uses a formula-only rule; add a styles part update when the rule should apply custom formatting.

@@ -28,13 +28,11 @@ The table part contains metadata only; the cell data remains in the worksheet. T
 
 ## Rust workflow
 
-Read the worksheet XML to find table references, then use generated part accessors on `WorksheetPart` for table definition parts when present.
+Create a table definition part, write table metadata, then add a `tableParts` reference to the worksheet:
 
 ```rust
-{{#include ../../listings/spreadsheet/src/lib.rs:get_worksheet_xml}}
+{{#include ../../listings/spreadsheet/src/lib.rs:add_table}}
 ```
-
-This chapter does not yet include a table writer. A safe implementation must update worksheet table references, table definition XML, relationships, content types, and any formulas that refer to the table display name.
 
 To keep autofilter enabled, include an `autoFilter` element, even if it has no active criteria. Table columns live under `tableColumns`, whose `count` must match the number of `tableColumn` children.
 

@@ -5,6 +5,7 @@ use std::path::Path;
 
 use ooxmlsdk::parts::ribbon_extensibility_part::RibbonExtensibilityPart;
 use ooxmlsdk::parts::spreadsheet_document::SpreadsheetDocument;
+use ooxmlsdk::parts::table_definition_part::TableDefinitionPart;
 use ooxmlsdk::parts::workbook_part::WorkbookPart;
 use ooxmlsdk::parts::worksheet_part::WorksheetPart;
 use ooxmlsdk::sdk::{OpenSettings, PackageOpenMode, SdkPart, SpreadsheetDocumentType};
@@ -269,6 +270,61 @@ pub fn insert_new_worksheet(
 }
 // ANCHOR_END: insert_new_worksheet
 
+// ANCHOR: add_greater_than_conditional_formatting
+pub fn add_greater_than_conditional_formatting(
+  path: &Path,
+  sheet_name: &str,
+  range: &str,
+  threshold: &str,
+) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = SpreadsheetDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let workbook_part = document.workbook_part()?;
+  let worksheet_part = worksheet_part_by_name(&document, &workbook_part, sheet_name)?;
+  let worksheet_xml = worksheet_part.data_as_str(&document)?.unwrap_or_default();
+  let updated_xml = append_greater_than_rule(worksheet_xml, range, threshold)?;
+
+  worksheet_part.set_data(&mut document, updated_xml.into_bytes())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: add_greater_than_conditional_formatting
+
+// ANCHOR: add_table
+pub fn add_table(
+  path: &Path,
+  sheet_name: &str,
+  table_name: &str,
+  range: &str,
+  columns: &[&str],
+) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  let mut document = SpreadsheetDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let workbook_part = document.workbook_part()?;
+  let worksheet_part = worksheet_part_by_name(&document, &workbook_part, sheet_name)?;
+  let table_part = worksheet_part.add_new_part_auto_id::<_, TableDefinitionPart>(&mut document)?;
+  let relationship_id = worksheet_part
+    .get_id_of_part(&document, &table_part)
+    .expect("table relationship id")
+    .to_string();
+  let table_id = max_table_id(&worksheet_part, &document) + 1;
+
+  table_part.set_data(
+    &mut document,
+    table_xml(table_id, table_name, range, columns).into_bytes(),
+  )?;
+
+  let worksheet_xml = worksheet_part.data_as_str(&document)?.unwrap_or_default();
+  let worksheet_xml = ensure_relationship_namespace(worksheet_xml);
+  let updated_xml = append_table_reference(&worksheet_xml, &relationship_id)?;
+  worksheet_part.set_data(&mut document, updated_xml.into_bytes())?;
+
+  let mut buffer = Cursor::new(Vec::new());
+  document.save(&mut buffer)?;
+  Ok(buffer.into_inner())
+}
+// ANCHOR_END: add_table
+
 fn lazy_settings() -> OpenSettings {
   OpenSettings {
     open_mode: PackageOpenMode::Lazy,
@@ -439,6 +495,133 @@ fn append_sheet(
   updated.push_str(&sheet_xml);
   updated.push_str(&workbook_xml[sheets_end..]);
   Ok(updated)
+}
+
+fn append_greater_than_rule(
+  worksheet_xml: &str,
+  range: &str,
+  threshold: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+  if worksheet_xml.contains(&format!(r#"sqref="{range}""#)) {
+    return Ok(worksheet_xml.to_string());
+  }
+  let priority = max_conditional_formatting_priority(worksheet_xml) + 1;
+  let threshold = escape_xml_text(threshold);
+  let range = escape_xml_text(range);
+  let rule = format!(
+    r#"<conditionalFormatting sqref="{range}"><cfRule type="cellIs" priority="{priority}" operator="greaterThan"><formula>{threshold}</formula></cfRule></conditionalFormatting>"#
+  );
+  let insert_at = worksheet_xml
+    .find("</worksheet>")
+    .ok_or("worksheet root not found")?;
+  let mut updated = String::with_capacity(worksheet_xml.len() + rule.len());
+  updated.push_str(&worksheet_xml[..insert_at]);
+  updated.push_str(&rule);
+  updated.push_str(&worksheet_xml[insert_at..]);
+  Ok(updated)
+}
+
+fn max_conditional_formatting_priority(worksheet_xml: &str) -> u32 {
+  let mut max_priority = 0_u32;
+  let mut rest = worksheet_xml;
+  while let Some(start) = rest.find("<cfRule ") {
+    rest = &rest[start..];
+    let Some(tag_end) = rest.find('>') else {
+      break;
+    };
+    if let Some(priority) =
+      extract_attr(&rest[..tag_end], "priority").and_then(|value| value.parse::<u32>().ok())
+    {
+      max_priority = max_priority.max(priority);
+    }
+    rest = &rest[tag_end + 1..];
+  }
+  max_priority
+}
+
+fn table_xml(table_id: u32, table_name: &str, range: &str, columns: &[&str]) -> String {
+  let table_name = escape_xml_text(table_name);
+  let range = escape_xml_text(range);
+  let mut xml = format!(
+    r#"<table xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" id="{table_id}" name="{table_name}" displayName="{table_name}" ref="{range}" totalsRowShown="0"><autoFilter ref="{range}"/><tableColumns count="{}">"#,
+    columns.len()
+  );
+  for (index, column) in columns.iter().enumerate() {
+    let column = escape_xml_text(column);
+    xml.push_str(&format!(
+      r#"<tableColumn id="{}" name="{column}"/>"#,
+      index + 1
+    ));
+  }
+  xml.push_str("</tableColumns></table>");
+  xml
+}
+
+fn append_table_reference(
+  worksheet_xml: &str,
+  relationship_id: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+  if worksheet_xml.contains(&format!(r#"r:id="{relationship_id}""#)) {
+    return Ok(worksheet_xml.to_string());
+  }
+  let table_part_xml = format!(r#"<tablePart r:id="{relationship_id}"/>"#);
+  if let Some((start, open_end, end)) = find_table_parts_range(worksheet_xml) {
+    let existing = &worksheet_xml[open_end..end];
+    let count = existing.matches("<tablePart ").count() + 1;
+    let opening = set_or_add_attr(&worksheet_xml[start..open_end], "count", &count.to_string());
+    let mut updated = String::with_capacity(worksheet_xml.len() + table_part_xml.len());
+    updated.push_str(&worksheet_xml[..start]);
+    updated.push_str(&opening);
+    updated.push_str(existing);
+    updated.push_str(&table_part_xml);
+    updated.push_str(&worksheet_xml[end..]);
+    return Ok(updated);
+  }
+  let insert_at = worksheet_xml
+    .find("</worksheet>")
+    .ok_or("worksheet root not found")?;
+  let table_parts = format!(r#"<tableParts count="1">{table_part_xml}</tableParts>"#);
+  let mut updated = String::with_capacity(worksheet_xml.len() + table_parts.len());
+  updated.push_str(&worksheet_xml[..insert_at]);
+  updated.push_str(&table_parts);
+  updated.push_str(&worksheet_xml[insert_at..]);
+  Ok(updated)
+}
+
+fn find_table_parts_range(xml: &str) -> Option<(usize, usize, usize)> {
+  let start = xml.find("<tableParts")?;
+  let open_end = xml[start..].find('>')? + start + 1;
+  let end = xml[open_end..].find("</tableParts>")? + open_end;
+  Some((start, open_end, end))
+}
+
+fn max_table_id(worksheet_part: &WorksheetPart, document: &SpreadsheetDocument) -> u32 {
+  let mut max_id = 0_u32;
+  for table_part in worksheet_part.table_definition_parts(document) {
+    let Some(table_xml) = table_part.data_as_str(document).ok().flatten() else {
+      continue;
+    };
+    let Some(tag_end) = table_xml.find('>') else {
+      continue;
+    };
+    if let Some(table_id) =
+      extract_attr(&table_xml[..tag_end], "id").and_then(|value| value.parse::<u32>().ok())
+    {
+      max_id = max_id.max(table_id);
+    }
+  }
+  max_id
+}
+
+fn ensure_relationship_namespace(xml: &str) -> String {
+  if xml.contains("xmlns:r=") {
+    return xml.to_string();
+  }
+  xml.replacen(
+    "<worksheet ",
+    r#"<worksheet xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" "#,
+    1,
+  )
 }
 
 fn extract_shared_strings(xml: &str) -> Vec<String> {
@@ -944,6 +1127,69 @@ mod tests {
     assert_eq!(workbook_part.worksheet_parts(&reopened).count(), 3);
     assert!(workbook_xml.contains(r#"name="Added Sheet""#));
     assert!(workbook_xml.contains(r#"sheetId="3""#));
+  }
+
+  #[test]
+  fn adds_greater_than_conditional_formatting() {
+    let fixture = write_spreadsheet_fixture();
+
+    let bytes = add_greater_than_conditional_formatting(&fixture, "Summary", "B2:B10", "40")
+      .expect("add conditional formatting");
+
+    let reopened = SpreadsheetDocument::new(Cursor::new(bytes)).expect("reopen spreadsheet");
+    let workbook_part = reopened.workbook_part().expect("workbook part");
+    let first_sheet = workbook_part
+      .worksheet_parts(&reopened)
+      .next()
+      .expect("first worksheet");
+    let xml = first_sheet
+      .data_as_str(&reopened)
+      .expect("worksheet xml")
+      .expect("worksheet data");
+
+    assert!(xml.contains(r#"<conditionalFormatting sqref="B2:B10">"#));
+    assert!(xml.contains(r#"<cfRule type="cellIs" priority="1" operator="greaterThan">"#));
+    assert!(xml.contains("<formula>40</formula>"));
+  }
+
+  #[test]
+  fn adds_table_definition_part_and_reference() {
+    let fixture = write_spreadsheet_fixture();
+
+    let bytes = add_table(
+      &fixture,
+      "Summary",
+      "SalesTable",
+      "A1:B2",
+      &["Region", "Sales"],
+    )
+    .expect("add table");
+
+    let reopened = SpreadsheetDocument::new(Cursor::new(bytes)).expect("reopen spreadsheet");
+    let workbook_part = reopened.workbook_part().expect("workbook part");
+    let first_sheet = workbook_part
+      .worksheet_parts(&reopened)
+      .next()
+      .expect("first worksheet");
+    let worksheet_xml = first_sheet
+      .data_as_str(&reopened)
+      .expect("worksheet xml")
+      .expect("worksheet data");
+    let related_table = first_sheet
+      .related_parts_of_type::<_, TableDefinitionPart>(&reopened)
+      .next()
+      .expect("table relationship");
+    let relationship_id = related_table.relationship_id().to_string();
+    let table_xml = related_table
+      .into_part()
+      .data_as_str(&reopened)
+      .expect("table xml")
+      .expect("table data");
+
+    assert!(worksheet_xml.contains(&format!(r#"<tablePart r:id="{relationship_id}"/>"#)));
+    assert!(table_xml.contains(r#"name="SalesTable""#));
+    assert!(table_xml.contains(r#"ref="A1:B2""#));
+    assert!(table_xml.contains(r#"<tableColumns count="2">"#));
   }
 
   fn write_spreadsheet_fixture() -> std::path::PathBuf {
