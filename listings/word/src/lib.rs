@@ -529,11 +529,11 @@ fn paragraph_xml(text: &str) -> String {
 }
 
 fn table_xml(rows: &[&[&str]]) -> String {
-  let mut table = String::from("<w:tbl>");
+  let mut table = String::from("<w:tbl><w:tblPr></w:tblPr>");
   for row in rows {
     table.push_str("<w:tr>");
     for cell in *row {
-      table.push_str("<w:tc>");
+      table.push_str("<w:tc><w:tcPr></w:tcPr>");
       table.push_str(&paragraph_xml(cell));
       table.push_str("</w:tc>");
     }
@@ -1445,7 +1445,10 @@ mod tests {
       .expect("document xml")
       .expect("document data");
 
-    assert!(xml.contains("<w:tbl><w:tr><w:tc><w:p><w:r><w:t>A1</w:t>"));
+    assert!(
+      xml
+        .contains("<w:tbl><w:tblPr></w:tblPr><w:tr><w:tc><w:tcPr></w:tcPr><w:p><w:r><w:t>A1</w:t>")
+    );
     assert!(xml.contains("<w:t>B2</w:t></w:r></w:p></w:tc></w:tr></w:tbl><w:sectPr/>"));
   }
 
@@ -1852,7 +1855,7 @@ mod tests {
   <w:body>
     <w:p><w:r><w:t>Hello</w:t></w:r></w:p>
     <w:p><w:r><w:t>from WordprocessingML</w:t></w:r></w:p>
-    <w:tbl><w:tr><w:tc><w:p><w:r><w:t>Cell text</w:t></w:r></w:p></w:tc></w:tr></w:tbl>
+    <w:tbl><w:tblPr></w:tblPr><w:tr><w:tc><w:tcPr></w:tcPr><w:p><w:r><w:t>Cell text</w:t></w:r></w:p></w:tc></w:tr></w:tbl>
     <w:sectPr/>
   </w:body>
 </w:document>"#,

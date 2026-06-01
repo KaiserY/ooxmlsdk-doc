@@ -19,21 +19,22 @@ Tables are block-level content, arranged as rows and columns. A table can contai
   </w:tblGrid>
   <w:tr>
     <w:tc>
+      <w:tcPr/>
       <w:p><w:r><w:t>1</w:t></w:r></w:p>
     </w:tc>
     <w:tc>
+      <w:tcPr/>
       <w:p><w:r><w:t>2</w:t></w:r></w:p>
     </w:tc>
     <w:tc>
+      <w:tcPr/>
       <w:p><w:r><w:t>3</w:t></w:r></w:p>
     </w:tc>
   </w:tr>
 </w:tbl>
 ```
 
-Table properties, grid definitions, borders, widths, and styles are stored under table-level or cell-level property elements.
-
-The `tblPr` element defines table-wide properties, such as style and width. The `tblGrid` element defines the grid layout through `gridCol` children. Each `tr` can have row properties, and each `tc` can have cell properties such as width, borders, margins, and vertical alignment.
+`w:tblPr` is required for a `w:tbl` in the generated schema and defines table-wide properties, such as style and width. `w:tblGrid` is optional and defines grid layout through `w:gridCol` children. Each `w:tr` can have row properties, and each `w:tc` can optionally include `w:tcPr` for cell-specific settings such as width, borders, margins, and vertical alignment.
 
 ## Rust workflow
 

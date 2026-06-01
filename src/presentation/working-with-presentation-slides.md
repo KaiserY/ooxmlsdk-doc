@@ -8,6 +8,8 @@ The slide list in `p:presentation` defines normal presentation order. Custom sho
 
 The root element of a slide part is `<p:sld/>`. It contains common slide data, optional transition and timing data, color map overrides, and extension data.
 
+For a shape, `p:nvSpPr` and `p:spPr` are required by the generated schema. The text body `p:txBody` is optional, but when it is present it must contain `a:bodyPr`; `a:lstStyle` is optional.
+
 ```xml
 <p:sld
   xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
@@ -21,7 +23,15 @@ The root element of a slide part is `<p:sld/>`. It contains common slide data, o
       </p:nvGrpSpPr>
       <p:grpSpPr/>
       <p:sp>
+        <p:nvSpPr>
+          <p:cNvPr id="2" name="Title 1"/>
+          <p:cNvSpPr/>
+          <p:nvPr/>
+        </p:nvSpPr>
+        <p:spPr/>
         <p:txBody>
+          <a:bodyPr/>
+          <a:lstStyle/>
           <a:p><a:r><a:t>Slide title</a:t></a:r></a:p>
         </p:txBody>
       </p:sp>

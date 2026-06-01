@@ -29,4 +29,4 @@ Handle these cases with normal Rust error propagation, usually by returning `Res
 
 ## Validator errors
 
-With the `validators` feature enabled, validation APIs return `ValidationErrorInfo` values. Those values include a validation category and, where available, an ID derived from the failed validator, such as `required`, `enum`, or `field_value`. Treat these as runtime validation data rather than compiler diagnostics.
+Where validator APIs are available, they return `ValidationErrorInfo` values. Those values include a validation category and, where available, an ID derived from the failed validator, such as `required`, `enum`, or `field_value`. Treat these as runtime validation data rather than compiler diagnostics.

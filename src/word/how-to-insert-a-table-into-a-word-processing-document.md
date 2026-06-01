@@ -2,7 +2,7 @@
 
 Inserting a table is a main document edit. The table must be placed in the body before section properties and should contain valid cell content.
 
-Tables are represented by `tbl` elements. A table can contain table-wide properties (`tblPr`), a table grid (`tblGrid`), rows (`tr`), cells (`tc`), and paragraphs inside each cell.
+Tables are represented by `tbl` elements. A table includes table-wide properties (`tblPr`) and can also contain a table grid (`tblGrid`), rows (`tr`), cells (`tc`), optional cell properties (`tcPr`), and paragraphs inside each cell.
 
 ## Table markup
 

@@ -81,7 +81,15 @@ A slide part stores only one slide. Text and drawing content are under `<p:cSld/
       </p:nvGrpSpPr>
       <p:grpSpPr/>
       <p:sp>
+        <p:nvSpPr>
+          <p:cNvPr id="2" name="Text 2"/>
+          <p:cNvSpPr/>
+          <p:nvPr/>
+        </p:nvSpPr>
+        <p:spPr/>
         <p:txBody>
+          <a:bodyPr/>
+          <a:lstStyle/>
           <a:p><a:r><a:t>Hello</a:t></a:r></a:p>
         </p:txBody>
       </p:sp>

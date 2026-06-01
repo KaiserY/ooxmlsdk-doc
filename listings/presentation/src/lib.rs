@@ -648,7 +648,7 @@ fn slide_xml(title: &str) -> String {
   format!(
     r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
-  <p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/><p:sp><p:nvSpPr><p:cNvPr id="2" name="Title 1"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:txBody><a:p><a:r><a:t>{title}</a:t></a:r></a:p></p:txBody></p:sp></p:spTree></p:cSld>
+  <p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/><p:sp><p:nvSpPr><p:cNvPr id="2" name="Title 1"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>{title}</a:t></a:r></a:p></p:txBody></p:sp></p:spTree></p:cSld>
 </p:sld>"#
   )
 }
@@ -1623,14 +1623,17 @@ mod tests {
       .unwrap_or_default();
     let text_xml = text
       .iter()
-      .map(|value| {
-        format!("<p:sp><p:txBody><a:p><a:r><a:t>{value}</a:t></a:r></a:p></p:txBody></p:sp>")
+      .enumerate()
+      .map(|(index, value)| {
+        let shape_id = index + 2;
+        format!(r#"<p:sp><p:nvSpPr><p:cNvPr id="{shape_id}" name="Text {shape_id}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>{value}</a:t></a:r></a:p></p:txBody></p:sp>"#)
       })
       .collect::<String>();
     let hyperlink_xml = hyperlink
       .map(|(id, label)| {
+        let shape_id = text.len() + 2;
         format!(
-          r#"<p:sp><p:txBody><a:p><a:r><a:rPr><a:hlinkClick r:id="{id}"/></a:rPr><a:t>{label}</a:t></a:r></a:p></p:txBody></p:sp>"#
+          r#"<p:sp><p:nvSpPr><p:cNvPr id="{shape_id}" name="Text {shape_id}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr><a:hlinkClick r:id="{id}"/></a:rPr><a:t>{label}</a:t></a:r></a:p></p:txBody></p:sp>"#
         )
       })
       .unwrap_or_default();

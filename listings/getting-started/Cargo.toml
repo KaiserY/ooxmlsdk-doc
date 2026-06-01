@@ -10,4 +10,4 @@ publish = false
 ooxmlsdk.workspace = true
 
 [dev-dependencies]
-zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
+zip.workspace = true

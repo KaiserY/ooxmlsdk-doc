@@ -19,7 +19,15 @@ The root element is `<p:notes/>`. It can contain common slide data, a color map 
       </p:nvGrpSpPr>
       <p:grpSpPr/>
       <p:sp>
+        <p:nvSpPr>
+          <p:cNvPr id="2" name="Notes placeholder 2"/>
+          <p:cNvSpPr/>
+          <p:nvPr/>
+        </p:nvSpPr>
+        <p:spPr/>
         <p:txBody>
+          <a:bodyPr/>
+          <a:lstStyle/>
           <a:p><a:r><a:t>Speaker note</a:t></a:r></a:p>
         </p:txBody>
       </p:sp>

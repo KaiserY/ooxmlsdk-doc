@@ -12,7 +12,7 @@ Most users can use the crate with its default features:
 
 ```toml
 [dependencies]
-ooxmlsdk = "0.7.0"
+ooxmlsdk = "0.8.0"
 ```
 
 The default feature set enables `parts`, which provides package-level read/write APIs such as:
@@ -27,7 +27,7 @@ Enable `parts` when you want package APIs but want to disable other default beha
 
 ```toml
 [dependencies]
-ooxmlsdk = { version = "0.7.0", default-features = false, features = ["parts"] }
+ooxmlsdk = { version = "0.8.0", default-features = false, features = ["parts"] }
 ```
 
 This is the minimum feature for reading and writing `.docx`, `.xlsx`, and `.pptx` packages through the strongly typed package model.
@@ -38,7 +38,7 @@ Enable `flat-opc` when you need Flat OPC XML package representations:
 
 ```toml
 [dependencies]
-ooxmlsdk = { version = "0.7.0", default-features = false, features = ["flat-opc"] }
+ooxmlsdk = { version = "0.8.0", default-features = false, features = ["flat-opc"] }
 ```
 
 This feature also enables `parts`.
@@ -49,21 +49,21 @@ Enable `mce` when you want Markup Compatibility and Extensibility processing dur
 
 ```toml
 [dependencies]
-ooxmlsdk = { version = "0.7.0", default-features = false, features = ["mce"] }
+ooxmlsdk = { version = "0.8.0", default-features = false, features = ["mce"] }
 ```
 
 This feature also enables `parts`.
 
 ## `validators`
 
-Enable `validators` when you need validation APIs:
+The `validators` feature exposes optional validation APIs:
 
 ```toml
 [dependencies]
-ooxmlsdk = { version = "0.7.0", features = ["validators"] }
+ooxmlsdk = { version = "0.8.0", features = ["validators"] }
 ```
 
-Validation support is opt-in so projects that only need package parsing, modification, and round-tripping do not need to compile validator dependencies.
+Validation support is opt-in so projects that only need package parsing, modification, and round-tripping do not need to compile validator dependencies. This book does not publish tested validator listings for `ooxmlsdk` 0.8.0; verify this feature against the exact crate version in your project before depending on it.
 
 ## Not yet modeled
 
