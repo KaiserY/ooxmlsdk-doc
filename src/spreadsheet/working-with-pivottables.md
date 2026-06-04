@@ -34,9 +34,9 @@ The pivot table definition describes which fields appear on the row axis, column
 Use the workbook and worksheet part graph to locate pivot-related parts. `WorkbookPart` exposes pivot cache definition parts, and `WorksheetPart` exposes pivot table parts.
 
 ```rust
-{{#include ../../listings/spreadsheet/src/lib.rs:get_worksheet_xml}}
+{{#include ../../listings/spreadsheet/src/lib.rs:count_pivottable_parts}}
 ```
 
-This first-pass page is read-oriented. Creating or editing PivotTables requires coordinated cache, worksheet, relationship, and display cell updates, so writer code should be added only with full fixture coverage.
-
 In `ooxmlsdk`, the generated part graph includes `WorkbookPart::pivot_table_cache_definition_parts`, `WorksheetPart::pivot_table_parts`, `PivotTablePart::pivot_table_cache_definition_part`, and `PivotTableCacheDefinitionPart::pivot_table_cache_records_part`. The corresponding schema types include `PivotTableDefinition`, `PivotField`, `PivotCacheDefinition`, and `PivotCacheRecords`.
+
+Creating or editing PivotTables requires coordinated cache, worksheet, relationship, and display cell updates. Keep those updates together: a pivot table definition without a matching cache, worksheet relationship, and displayed cell range is not a complete PivotTable.

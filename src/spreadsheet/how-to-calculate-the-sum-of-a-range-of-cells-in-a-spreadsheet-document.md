@@ -4,15 +4,15 @@
 
 The upstream sample accepts a workbook path, worksheet name, first cell, last cell, and result cell. It parses row numbers from cell references, parses column names from cell references, compares columns by length and lexical order, sums cells in the rectangular range, inserts the result through the shared string table, and writes the result cell.
 
-## Read values first
+## Sum a range
 
 ```rust
-{{#include ../../listings/spreadsheet/src/lib.rs:get_cell_values}}
+{{#include ../../listings/spreadsheet/src/lib.rs:sum_cell_range}}
 ```
 
-The helper returns cell references with display values from the first worksheet. For numeric calculations, treat values as strings at the package boundary and parse them explicitly.
+The helper reads display values from the first worksheet, filters cells inside the rectangular range, parses the selected values as `f64`, and sums them in Rust. Treat values as strings at the package boundary and parse them explicitly so conversion failures are normal `Result` errors.
 
-For a production Rust version, split the workflow into two parts: a read-only range scanner that returns typed numeric values, and a writer that inserts or updates the result cell while preserving row and cell ordering.
+For a writer version, keep the read and write halves separate: first compute the numeric result, then insert or update the result cell while preserving row and cell ordering.
 
 ## Formula alternative
 
@@ -25,4 +25,4 @@ SpreadsheetML can store a formula and cached value:
 </c>
 ```
 
-Editing formulas safely also involves cached values and calculation metadata. A formula writer should be fixture-backed before it is documented as final code.
+Editing formulas safely also involves cached values and calculation metadata. If you write a `SUM(...)` formula instead of calculating in Rust, decide whether to omit the cached `<v/>` value and let the spreadsheet application recalculate, or write a cache that matches the formula.

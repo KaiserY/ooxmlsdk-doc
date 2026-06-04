@@ -42,11 +42,11 @@ Open the source presentation read-only, open or copy the target package, and use
 {{#include ../../listings/presentation/src/lib.rs:open_presentation_read_only}}
 ```
 
-This chapter intentionally does not include a presentation theme writer yet. A complete example should verify:
+For a full Rust writer, verify these invariants before saving:
 
 - source theme part exists,
 - target theme relationship is added or replaced,
 - dependent slide masters and layouts still resolve their theme references,
 - the saved package opens in PowerPoint or another strict consumer.
 
-The WordprocessingML theme replacement example in the General section shows the package-level idea; PresentationML needs its own tested fixture before publishing final code.
+The WordprocessingML theme replacement example in the General section shows the package-level copy-and-replace pattern. PresentationML theme application has a larger package surface because slide masters and layouts are part of the visual result.

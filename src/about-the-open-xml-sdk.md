@@ -61,7 +61,7 @@ The runtime crate is generated from Open XML metadata. The generated surface inc
 
 Most package operations return `Result<_, ooxmlsdk::common::SdkError>` or can be used with `Box<dyn std::error::Error>` in examples. Optional package relationships are represented with `Option`, and collections are exposed through Rust iterators or vectors depending on the generated schema shape.
 
-In `ooxmlsdk` 0.8.0, generated schema fields use explicit simple value wrappers for OOXML booleans and typed unit values for many measures and percentages. Convert those values at the boundary of your application instead of assuming every schema attribute is a Rust `bool`, integer, or string.
+In `ooxmlsdk` 0.9.0, generated schema fields use explicit simple value wrappers for OOXML booleans and typed unit values for many measures and percentages. Convert those values at the boundary of your application instead of assuming every schema attribute is a Rust `bool`, integer, or string.
 
 ## Common tasks
 
@@ -69,7 +69,7 @@ In `ooxmlsdk` 0.8.0, generated schema fields use explicit simple value wrappers 
 
 - **Strongly typed package and schema access**: use generated Rust types instead of hand-writing every element and attribute name.
 - **Content construction, search, and manipulation**: traverse package relationships, inspect XML parts, load generated roots, and save updated packages. Use typed child accessors for well-known parts, or related-part traversal helpers when you need to keep the relationship id with the target part.
-- **Validation-oriented workflows**: rely on explicit `Result` handling plus package/schema tests, and use optional validator APIs only after verifying the feature against the exact crate version in your project.
+- **Validation-oriented workflows**: rely on explicit `Result` handling plus package/schema tests, and enable the optional `validators` feature when you need structured schema diagnostics.
 
 ## Feature model
 
@@ -79,7 +79,7 @@ Additional features are opt-in:
 
 - `flat-opc`: Flat OPC package read/write helpers.
 - `mce`: Markup Compatibility and Extensibility processing.
-- `validators`: optional validation APIs; verify the feature against the exact crate version before depending on it.
+- `validators`: optional validation APIs for generated schema roots and loaded package roots.
 
 Use `default-features = false` when you want to make the enabled surface explicit.
 

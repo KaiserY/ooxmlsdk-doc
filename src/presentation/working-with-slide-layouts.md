@@ -47,4 +47,4 @@ Layout parts can also relate back to a slide master and to dependent resources s
 
 ## Editing notes
 
-Creating a valid layout from scratch requires a coordinated slide master, layout part, relationship entries, content type overrides, and placeholder XML. Until a chapter provides a tested construction example, prefer copying an existing layout and making small schema-aware edits.
+Creating a valid layout from scratch requires a coordinated slide master, layout part, relationship entries, content type overrides, and placeholder XML. In Rust, prefer copying an existing layout and making small schema-aware edits unless your code owns all of those package updates and validates the saved presentation.

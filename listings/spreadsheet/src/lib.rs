@@ -12,6 +12,19 @@ use ooxmlsdk::parts::workbook_part::WorkbookPart;
 use ooxmlsdk::parts::worksheet_part::WorksheetPart;
 use ooxmlsdk::sdk::{OpenSettings, PackageOpenMode, SdkPart, SpreadsheetDocumentType};
 
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct FormulaCell {
+  pub reference: String,
+  pub formula: String,
+  pub cached_value: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct PivotTablePartCounts {
+  pub worksheet_pivot_tables: usize,
+  pub workbook_pivot_caches: usize,
+}
+
 pub fn open_spreadsheet_read_only(path: &Path) -> Result<usize, Box<dyn std::error::Error>> {
   let document = SpreadsheetDocument::new_from_file_with_settings(path, lazy_settings())?;
   let workbook_part = document.workbook_part()?;
@@ -19,6 +32,15 @@ pub fn open_spreadsheet_read_only(path: &Path) -> Result<usize, Box<dyn std::err
   Ok(workbook_part.worksheet_parts(&document).count())
 }
 // ANCHOR_END: open_spreadsheet_read_only
+
+// ANCHOR: open_spreadsheet_from_bytes
+pub fn open_spreadsheet_from_bytes(bytes: Vec<u8>) -> Result<usize, Box<dyn std::error::Error>> {
+  let document = SpreadsheetDocument::new(Cursor::new(bytes))?;
+  let workbook_part = document.workbook_part()?;
+
+  Ok(workbook_part.worksheet_parts(&document).count())
+}
+// ANCHOR_END: open_spreadsheet_from_bytes
 
 // ANCHOR: create_spreadsheet_document
 pub fn create_spreadsheet_document() -> Result<Vec<u8>, Box<dyn std::error::Error>> {
@@ -100,6 +122,76 @@ pub fn get_cell_values(path: &Path) -> Result<Vec<(String, String)>, Box<dyn std
 }
 // ANCHOR_END: get_cell_values
 
+// ANCHOR: visit_first_worksheet_cells
+pub fn visit_first_worksheet_cells(
+  path: &Path,
+  mut visit: impl FnMut(&str, &str),
+) -> Result<usize, Box<dyn std::error::Error>> {
+  let document = SpreadsheetDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let workbook_part = document.workbook_part()?;
+  let shared_strings = workbook_part
+    .shared_string_table_part(&document)
+    .and_then(|part| {
+      part
+        .data_as_str(&document)
+        .ok()
+        .flatten()
+        .map(extract_shared_strings)
+    })
+    .unwrap_or_default();
+  let Some(first_sheet) = workbook_part.worksheet_parts(&document).next() else {
+    return Ok(0);
+  };
+  let worksheet_xml = first_sheet.data_as_str(&document)?.unwrap_or_default();
+
+  Ok(visit_cell_values(
+    worksheet_xml,
+    &shared_strings,
+    |reference, value| {
+      visit(&reference, &value);
+    },
+  ))
+}
+// ANCHOR_END: visit_first_worksheet_cells
+
+// ANCHOR: get_formula_cells
+pub fn get_formula_cells(path: &Path) -> Result<Vec<FormulaCell>, Box<dyn std::error::Error>> {
+  let document = SpreadsheetDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let workbook_part = document.workbook_part()?;
+  let Some(first_sheet) = workbook_part.worksheet_parts(&document).next() else {
+    return Ok(Vec::new());
+  };
+  let worksheet_xml = first_sheet.data_as_str(&document)?.unwrap_or_default();
+
+  Ok(extract_formula_cells(worksheet_xml))
+}
+// ANCHOR_END: get_formula_cells
+
+// ANCHOR: sum_cell_range
+pub fn sum_cell_range(
+  path: &Path,
+  first_cell: &str,
+  last_cell: &str,
+) -> Result<f64, Box<dyn std::error::Error>> {
+  let (first_row, first_column) = cell_position(first_cell)?;
+  let (last_row, last_column) = cell_position(last_cell)?;
+  let min_row = first_row.min(last_row);
+  let max_row = first_row.max(last_row);
+  let min_column = first_column.min(last_column);
+  let max_column = first_column.max(last_column);
+  let mut sum = 0.0;
+
+  for (reference, value) in get_cell_values(path)? {
+    let (row, column) = cell_position(&reference)?;
+    if (min_row..=max_row).contains(&row) && (min_column..=max_column).contains(&column) {
+      sum += value.parse::<f64>()?;
+    }
+  }
+
+  Ok(sum)
+}
+// ANCHOR_END: sum_cell_range
+
 // ANCHOR: get_defined_names
 pub fn get_defined_names(
   path: &Path,
@@ -111,6 +203,27 @@ pub fn get_defined_names(
   Ok(extract_defined_names(workbook_xml))
 }
 // ANCHOR_END: get_defined_names
+
+// ANCHOR: count_pivottable_parts
+pub fn count_pivottable_parts(
+  path: &Path,
+) -> Result<PivotTablePartCounts, Box<dyn std::error::Error>> {
+  let document = SpreadsheetDocument::new_from_file_with_settings(path, lazy_settings())?;
+  let workbook_part = document.workbook_part()?;
+  let worksheet_pivot_tables = workbook_part
+    .worksheet_parts(&document)
+    .map(|worksheet_part| worksheet_part.pivot_table_parts(&document).count())
+    .sum();
+  let workbook_pivot_caches = workbook_part
+    .pivot_table_cache_definition_parts(&document)
+    .count();
+
+  Ok(PivotTablePartCounts {
+    worksheet_pivot_tables,
+    workbook_pivot_caches,
+  })
+}
+// ANCHOR_END: count_pivottable_parts
 
 // ANCHOR: get_hidden_rows_or_columns
 pub fn get_hidden_rows_or_columns(
@@ -747,6 +860,18 @@ fn extract_shared_strings(xml: &str) -> Vec<String> {
 
 fn extract_cell_values(xml: &str, shared_strings: &[String]) -> Vec<(String, String)> {
   let mut cells = Vec::new();
+  visit_cell_values(xml, shared_strings, |reference, value| {
+    cells.push((reference, value));
+  });
+  cells
+}
+
+fn visit_cell_values(
+  xml: &str,
+  shared_strings: &[String],
+  mut visit: impl FnMut(String, String),
+) -> usize {
+  let mut count = 0;
   let mut rest = xml;
 
   while let Some(start) = rest.find("<c ") {
@@ -773,7 +898,37 @@ fn extract_cell_values(xml: &str, shared_strings: &[String]) -> Vec<(String, Str
       } else {
         decode_minimal_xml_text(raw_value)
       };
-      cells.push((reference, value));
+      visit(reference, value);
+      count += 1;
+    }
+    rest = &rest[cell_end + "</c>".len()..];
+  }
+
+  count
+}
+
+fn extract_formula_cells(xml: &str) -> Vec<FormulaCell> {
+  let mut cells = Vec::new();
+  let mut rest = xml;
+
+  while let Some(start) = rest.find("<c ") {
+    rest = &rest[start..];
+    let Some(tag_end) = rest.find('>') else {
+      break;
+    };
+    let cell_tag = &rest[..tag_end];
+    let reference = extract_attr(cell_tag, "r").unwrap_or_default().to_string();
+    let Some(cell_end) = rest.find("</c>") else {
+      rest = &rest[tag_end + 1..];
+      continue;
+    };
+    let cell_xml = &rest[tag_end + 1..cell_end];
+    if let Some(formula) = extract_element_text(cell_xml, "f") {
+      cells.push(FormulaCell {
+        reference,
+        formula: decode_minimal_xml_text(formula),
+        cached_value: extract_element_text(cell_xml, "v").map(decode_minimal_xml_text),
+      });
     }
     rest = &rest[cell_end + "</c>".len()..];
   }
@@ -918,6 +1073,13 @@ fn column_index_from_cell_reference(
   Ok(column)
 }
 
+fn cell_position(cell_reference: &str) -> Result<(u32, u32), Box<dyn std::error::Error>> {
+  Ok((
+    row_index_from_cell_reference(cell_reference)?,
+    column_index_from_cell_reference(cell_reference)?,
+  ))
+}
+
 fn merge_reference(
   first_cell: &str,
   second_cell: &str,
@@ -1043,6 +1205,15 @@ mod tests {
   }
 
   #[test]
+  fn opens_spreadsheet_from_bytes() {
+    let bytes = std::fs::read(write_spreadsheet_fixture()).expect("fixture bytes");
+
+    let count = open_spreadsheet_from_bytes(bytes).expect("open spreadsheet from bytes");
+
+    assert_eq!(count, 2);
+  }
+
+  #[test]
   fn creates_spreadsheet_document() {
     let bytes = create_spreadsheet_document().expect("create spreadsheet");
     let document =
@@ -1084,9 +1255,50 @@ mod tests {
         ("A1".to_string(), "Region".to_string()),
         ("B1".to_string(), "Sales".to_string()),
         ("A2".to_string(), "North".to_string()),
-        ("B2".to_string(), "42".to_string())
+        ("B2".to_string(), "42".to_string()),
+        ("C2".to_string(), "84".to_string())
       ]
     );
+  }
+
+  #[test]
+  fn visits_first_worksheet_cells() {
+    let fixture = write_spreadsheet_fixture();
+    let mut visited = Vec::new();
+
+    let count = visit_first_worksheet_cells(&fixture, |reference, value| {
+      visited.push((reference.to_string(), value.to_string()));
+    })
+    .expect("visit cells");
+
+    assert_eq!(count, 5);
+    assert_eq!(visited[0], ("A1".to_string(), "Region".to_string()));
+    assert_eq!(visited[4], ("C2".to_string(), "84".to_string()));
+  }
+
+  #[test]
+  fn gets_formula_cells() {
+    let fixture = write_spreadsheet_fixture();
+
+    let formulas = get_formula_cells(&fixture).expect("formula cells");
+
+    assert_eq!(
+      formulas,
+      vec![FormulaCell {
+        reference: "C2".to_string(),
+        formula: "SUM(B2:B2)".to_string(),
+        cached_value: Some("84".to_string()),
+      }]
+    );
+  }
+
+  #[test]
+  fn sums_cell_range() {
+    let fixture = write_spreadsheet_fixture();
+
+    let sum = sum_cell_range(&fixture, "B2", "C2").expect("sum range");
+
+    assert_eq!(sum, 126.0);
   }
 
   #[test]
@@ -1098,6 +1310,21 @@ mod tests {
     assert_eq!(
       names.get("SalesRange").map(String::as_str),
       Some("Summary!$B$2:$B$2")
+    );
+  }
+
+  #[test]
+  fn counts_pivottable_parts() {
+    let fixture = write_spreadsheet_fixture();
+
+    let counts = count_pivottable_parts(&fixture).expect("pivot table part counts");
+
+    assert_eq!(
+      counts,
+      PivotTablePartCounts {
+        worksheet_pivot_tables: 0,
+        workbook_pivot_caches: 0,
+      }
     );
   }
 
@@ -1465,6 +1692,7 @@ mod tests {
     <row r="2">
       <c r="A2" t="s"><v>2</v></c>
       <c r="B2"><v>42</v></c>
+      <c r="C2"><f>SUM(B2:B2)</f><v>84</v></c>
     </row>
     <row r="3" hidden="1"/>
   </sheetData>

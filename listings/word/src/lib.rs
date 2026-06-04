@@ -8,6 +8,7 @@ use ooxmlsdk::parts::style_definitions_part::StyleDefinitionsPart;
 use ooxmlsdk::parts::wordprocessing_comments_part::WordprocessingCommentsPart;
 use ooxmlsdk::parts::wordprocessing_document::WordprocessingDocument;
 use ooxmlsdk::sdk::{OpenSettings, PackageOpenMode, SdkPart, WordprocessingDocumentType};
+use ooxmlsdk::validator::ValidationErrorInfo;
 
 pub fn open_word_read_only(path: &Path) -> Result<usize, Box<dyn std::error::Error>> {
   let document = WordprocessingDocument::new_from_file_with_settings(path, lazy_settings())?;
@@ -17,6 +18,26 @@ pub fn open_word_read_only(path: &Path) -> Result<usize, Box<dyn std::error::Err
   Ok(xml.matches("<w:p").count())
 }
 // ANCHOR_END: open_word_read_only
+
+// ANCHOR: open_word_from_bytes
+pub fn open_word_from_bytes(bytes: Vec<u8>) -> Result<usize, Box<dyn std::error::Error>> {
+  let document = WordprocessingDocument::new(Cursor::new(bytes))?;
+  let main_part = document.main_document_part()?;
+  let xml = main_part.data_as_str(&document)?.unwrap_or_default();
+
+  Ok(xml.matches("<w:p").count())
+}
+// ANCHOR_END: open_word_from_bytes
+
+// ANCHOR: validate_word_document
+pub fn validate_word_document(
+  path: &Path,
+) -> Result<Vec<ValidationErrorInfo>, Box<dyn std::error::Error>> {
+  let mut document = WordprocessingDocument::new_from_file(path)?;
+
+  Ok(document.validate()?)
+}
+// ANCHOR_END: validate_word_document
 
 // ANCHOR: create_word_document
 pub fn create_word_document(text: &str) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
@@ -1287,6 +1308,28 @@ mod tests {
     let count = open_word_read_only(&fixture).expect("open document");
 
     assert_eq!(count, 3);
+  }
+
+  #[test]
+  fn opens_word_from_bytes() {
+    let bytes = std::fs::read(write_word_fixture()).expect("fixture bytes");
+
+    let count = open_word_from_bytes(bytes).expect("open document from bytes");
+
+    assert_eq!(count, 3);
+  }
+
+  #[test]
+  fn validates_word_document() {
+    let bytes = create_word_document("Valid text").expect("create document");
+    let fixture = write_bytes_fixture("docx", bytes);
+
+    let errors = validate_word_document(&fixture).expect("validate document");
+
+    assert!(
+      errors.is_empty(),
+      "unexpected validation errors: {errors:?}"
+    );
   }
 
   #[test]

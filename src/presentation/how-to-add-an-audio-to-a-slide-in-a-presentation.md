@@ -40,7 +40,7 @@ Use `ooxmlsdk` to open the presentation and find the target slide. The package-s
 {{#include ../../listings/presentation/src/lib.rs:add_audio_media_references}}
 ```
 
-This is not a complete PowerPoint audio insertion writer by itself. A complete audio insertion example must still verify all of these together:
+The listing covers the package-side media relationships. A complete PowerPoint-compatible writer must verify all of these together:
 
 - media data part content type and extension,
 - slide audio and media reference relationships,
@@ -48,4 +48,4 @@ This is not a complete PowerPoint audio insertion writer by itself. A complete a
 - timing markup for playback,
 - package save and PowerPoint compatibility.
 
-Until that fixture exists, use this chapter as the package map for implementing and testing audio insertion.
+Use this chapter as the package map for implementing and testing audio insertion: keep relationship creation, placeholder XML, and timing XML in one save operation so the slide remains internally consistent.

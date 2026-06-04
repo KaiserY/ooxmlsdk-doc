@@ -19,10 +19,10 @@ The generated schema type for `<f/>` is `CellFormula`. The cached `<v/>` result 
 
 ## Rust workflow
 
-Use the worksheet traversal pattern to find cells and inspect their XML:
+Use the worksheet traversal pattern to find cells that contain `<f/>` and report both the formula text and any cached value:
 
 ```rust
-{{#include ../../listings/spreadsheet/src/lib.rs:get_worksheet_xml}}
+{{#include ../../listings/spreadsheet/src/lib.rs:get_formula_cells}}
 ```
 
-This first-pass chapter does not publish a formula writer. A final writer should parse worksheet XML, update only the intended `<f/>` and cached `<v/>` nodes, and decide whether to remove or refresh the calculation chain.
+For write paths, update only the intended `<f/>` and cached `<v/>` nodes, and decide whether to remove or refresh the calculation chain. `ooxmlsdk` does not calculate formulas; it preserves the package data you write.

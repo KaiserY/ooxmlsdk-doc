@@ -6,13 +6,13 @@ The key tradeoff is DOM-style parsing versus streaming parsing. A DOM-style read
 
 ## Package traversal
 
-Start by opening the workbook and locating worksheet parts:
+Start by opening the workbook, loading shared strings once, and visiting worksheet cells through a callback:
 
 ```rust
-{{#include ../../listings/spreadsheet/src/lib.rs:get_worksheet_xml}}
+{{#include ../../listings/spreadsheet/src/lib.rs:visit_first_worksheet_cells}}
 ```
 
-The listing returns XML strings because it is a compact documentation example. For very large sheets, adapt the same package traversal but process the worksheet data with a streaming XML parser.
+This listing keeps the caller's result shape outside the reader. A caller that writes each visited cell to a database or channel can avoid building a worksheet-sized `Vec` in its own code. For very large worksheets, keep this shape but replace the inner XML scan with an event parser that reads from the worksheet part stream.
 
 ## Practical notes
 
@@ -20,7 +20,4 @@ The listing returns XML strings because it is a compact documentation example. F
 - Process rows incrementally.
 - Avoid collecting all cells unless the caller needs random access.
 - Treat formulas, dates, booleans, inline strings, and styled numbers as separate conversion cases.
-
-A dedicated streaming example should be added under `listings/spreadsheet` before this page publishes final parser code.
-
-In `ooxmlsdk`, the package traversal is covered here, but the page deliberately does not present a full streaming worksheet parser until it is backed by a tested listing. When that listing is added, it should keep shared string resolution separate from row iteration so callers can choose between raw cell values and formatted text.
+- Keep shared string resolution separate from row iteration so callers can choose between raw cell values and formatted text.

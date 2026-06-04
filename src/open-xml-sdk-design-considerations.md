@@ -33,4 +33,4 @@ When you only need package read/write APIs, the default `parts` feature is enoug
 
 - Use `flat-opc` only when you need Flat OPC XML package representations.
 - Use `mce` only when you want Markup Compatibility and Extensibility processing during package open and root loading.
-- Treat `validators` as opt-in validation surface and verify it against the exact crate version before depending on it.
+- Enable `validators` when you need structured validation diagnostics for generated schema roots or loaded package roots.

@@ -1,19 +1,31 @@
 # Validate a word processing document
 
-Validation can mean different things: package relationships resolve, required parts exist, XML is well-formed, and the content follows WordprocessingML schema rules.
+Validation can mean different things: package relationships resolve, required parts exist, XML is well-formed, and the content follows WordprocessingML schema rules. In `ooxmlsdk` 0.9.0, schema validation is available through the optional `validators` feature.
 
-The upstream sample separates two cases: validating a normal document and validating a deliberately corrupted document that contains schema-invalid content. A useful Rust validator should make the same distinction between expected success and expected diagnostics.
+The upstream Open XML SDK sample separates two cases: validating a normal document and validating a deliberately corrupted document that contains schema-invalid content. In Rust, keep the same distinction: a valid document should return an empty diagnostics list, and an invalid document should return structured `ValidationErrorInfo` values that the caller can inspect or print.
 
-## Package-level checks
+## Validate the package
 
-Start with the package graph. If `WordprocessingDocument` can open the package and retrieve the main document part, the basic OPC structure is usable.
+Enable the feature in `Cargo.toml`:
 
-```rust
-{{#include ../../listings/word/src/lib.rs:open_word_read_only}}
+```toml
+[dependencies]
+ooxmlsdk = { version = "0.9.0", features = ["validators"] }
 ```
 
-Schema-level validation is broader than this first-pass chapter. A final validation example should report package errors, XML parse errors, and schema diagnostics separately.
+Then open the package and call `validate`. The package-level validator loads the known root elements for the document and reports schema diagnostics with part context when available.
 
-Opening the package and reading the main document part is only a basic package check. Schema validation should report each error with location, part, node path or element name, and a readable message. Do not mutate a document just to test validation unless the fixture is disposable; a corrupted file may fail on later opens.
+```rust
+{{#include ../../listings/word/src/lib.rs:validate_word_document}}
+```
 
-`ooxmlsdk` 0.8.0 exposes a `validators` feature, but this book does not publish a validator listing until that feature is verified against the released crate in this workspace.
+An empty vector means no validation errors were reported by the generated validators:
+
+```rust
+let errors = validate_word_document(path)?;
+if errors.is_empty() {
+  println!("document is valid");
+}
+```
+
+Each `ValidationErrorInfo` includes an error category, a readable description, and optional fields such as `id`, `type_name`, `field_name`, and `part_uri`. Treat those diagnostics as runtime validation data; do not rely on opening a package alone as a substitute for schema validation.
