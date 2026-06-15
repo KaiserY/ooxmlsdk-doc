@@ -94,9 +94,9 @@ dependencies = [
 
 [[package]]
 name = "ooxmlsdk"
-version = "0.9.0"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "423c450d4459daa977cd2881bf6e8a1982044b68c5258e4e7bd09fa17af3a8b9"
+checksum = "69f759c7d7c0ed010cf70e7fc0022fd2013c22669afd593633f02cd2c3aa9638"
 dependencies = [
  "ooxmlsdk-derive",
  "quick-xml",
@@ -107,9 +107,9 @@ dependencies = [
 
 [[package]]
 name = "ooxmlsdk-derive"
-version = "0.9.0"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43ccdc791a204614dacd1a2252108ca3ebff37c537783599db4137d87dd0c83a"
+checksum = "8583d0714d3c64fef01e7aefdfe00f22979fa8979b21a522cea4b520163ead8e"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -184,9 +184,9 @@ dependencies = [
 
 [[package]]
 name = "regex"
-version = "1.12.3"
+version = "1.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e10754a14b9137dd7b1e3e5b0493cc9171fdd105e0ab477f51b72e7f3ac0e276"
+checksum = "f1292b7759ae1cb9ec195452d1390a074f0cd8541ab7a5a8c31cd6db45d4a6ba"
 dependencies = [
  "aho-corasick",
  "memchr",
@@ -207,9 +207,9 @@ dependencies = [
 
 [[package]]
 name = "regex-syntax"
-version = "0.8.10"
+version = "0.8.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc897dd8d9e8bd1ed8cdad82b5966c3e0ecae09fb1907d58efaa013543185d0a"
+checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
 
 [[package]]
 name = "simd-adler32"

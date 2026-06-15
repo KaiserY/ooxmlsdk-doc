@@ -10,7 +10,7 @@ Related links:
 - crates.io: <https://crates.io/crates/ooxmlsdk>
 - API docs: <https://docs.rs/ooxmlsdk/latest/ooxmlsdk/>
 
-The book currently targets `ooxmlsdk` 0.9.0. Unless a page explicitly names another version, examples and API notes refer to 0.9.0.
+The book currently targets `ooxmlsdk` 0.10.2. Unless a page explicitly names another version, examples and API notes refer to 0.10.2.
 
 ## Build
 

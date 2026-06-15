@@ -14,5 +14,5 @@ rust-version = "1.88"
 license = "MIT OR Apache-2.0"
 
 [workspace.dependencies]
-ooxmlsdk = "0.9.0"
+ooxmlsdk = "0.10.2"
 zip = { version = "8.6.0", default-features = false, features = ["deflate"] }

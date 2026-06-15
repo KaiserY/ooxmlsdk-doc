@@ -61,7 +61,7 @@ The runtime crate is generated from Open XML metadata. The generated surface inc
 
 Most package operations return `Result<_, ooxmlsdk::common::SdkError>` or can be used with `Box<dyn std::error::Error>` in examples. Optional package relationships are represented with `Option`, and collections are exposed through Rust iterators or vectors depending on the generated schema shape.
 
-In `ooxmlsdk` 0.9.0, generated schema fields use explicit simple value wrappers for OOXML booleans and typed unit values for many measures and percentages. Convert those values at the boundary of your application instead of assuming every schema attribute is a Rust `bool`, integer, or string.
+In `ooxmlsdk` 0.10.2, generated schema fields use explicit simple value wrappers for OOXML booleans and typed unit values for many measures and percentages. Convert those values at the boundary of your application instead of assuming every schema attribute is a Rust `bool`, integer, or string.
 
 ## Common tasks
 
