@@ -25,6 +25,17 @@ Package operations return `Result` and may fail because:
 - XML does not match the generated schema type being parsed.
 - Output writing fails.
 
+The 0.13 package-bound Part model also reports ownership and relationship
+failures explicitly:
+
+| Error | Meaning |
+| --- | --- |
+| `ForeignPart` | The Part handle belongs to another package |
+| `StalePart` | The Part has been deleted from its package |
+| `PartNotReferenced` | The selected relationship source does not reference the Part |
+| `PartRelationshipNotFound` | The requested relationship ID is absent |
+| `AmbiguousPartRelationship` | An operation requiring one edge found several IDs targeting the Part |
+
 Handle these cases with normal Rust error propagation, usually by returning `Result` from your own helper and using `?` on package operations.
 
 ## Validator errors

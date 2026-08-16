@@ -12,7 +12,7 @@ Most users can use the crate with its default features:
 
 ```toml
 [dependencies]
-ooxmlsdk = "0.10.2"
+ooxmlsdk = "0.13.0"
 ```
 
 The default feature set enables `parts`, which provides package-level read/write APIs such as:
@@ -27,7 +27,7 @@ Enable `parts` when you want package APIs but want to disable other default beha
 
 ```toml
 [dependencies]
-ooxmlsdk = { version = "0.10.2", default-features = false, features = ["parts"] }
+ooxmlsdk = { version = "0.13.0", default-features = false, features = ["parts"] }
 ```
 
 This is the minimum feature for reading and writing `.docx`, `.xlsx`, and `.pptx` packages through the strongly typed package model.
@@ -38,7 +38,7 @@ Enable `flat-opc` when you need Flat OPC XML package representations:
 
 ```toml
 [dependencies]
-ooxmlsdk = { version = "0.10.2", default-features = false, features = ["flat-opc"] }
+ooxmlsdk = { version = "0.13.0", default-features = false, features = ["flat-opc"] }
 ```
 
 This feature also enables `parts`.
@@ -49,7 +49,7 @@ Enable `mce` when you want Markup Compatibility and Extensibility processing dur
 
 ```toml
 [dependencies]
-ooxmlsdk = { version = "0.10.2", default-features = false, features = ["mce"] }
+ooxmlsdk = { version = "0.13.0", default-features = false, features = ["mce"] }
 ```
 
 This feature also enables `parts`.
@@ -60,10 +60,10 @@ The `validators` feature exposes optional validation APIs:
 
 ```toml
 [dependencies]
-ooxmlsdk = { version = "0.10.2", features = ["validators"] }
+ooxmlsdk = { version = "0.13.0", features = ["validators"] }
 ```
 
-Validation support is opt-in so projects that only need package parsing, modification, and round-tripping do not need to compile validator dependencies. With `validators` enabled, generated schema roots implement `SdkValidator`, and package types such as `WordprocessingDocument` can validate loaded root elements and return `ValidationErrorInfo` diagnostics.
+Validation support is opt-in so projects that only need package parsing, modification, and round-tripping do not need to compile validator dependencies. With `validators` enabled, generated schema types and package types such as `WordprocessingDocument` expose inherent `validate` methods that return `ValidationErrorInfo` diagnostics. No validator trait import is required.
 
 ## Not yet modeled
 

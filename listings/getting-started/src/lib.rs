@@ -2,6 +2,7 @@
 use std::io::Cursor;
 use std::path::Path;
 
+use bytes::Bytes;
 use ooxmlsdk::parts::theme_part::ThemePart;
 use ooxmlsdk::parts::wordprocessing_document::WordprocessingDocument;
 use ooxmlsdk::sdk::{OpenSettings, PackageOpenMode, is_encrypted_office_file_path};
@@ -9,7 +10,7 @@ use ooxmlsdk::sdk::{OpenSettings, PackageOpenMode, is_encrypted_office_file_path
 pub fn round_trip_word_document(path: &Path) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
   let document = WordprocessingDocument::new_from_file(path)?;
   let main_part = document.main_document_part().expect("main document part");
-  assert!(document.get_id_of_part(&main_part).is_some());
+  assert!(!document.get_id_of_part(&main_part)?.is_empty());
 
   let mut buffer = Cursor::new(Vec::new());
   document.save(&mut buffer)?;
@@ -68,6 +69,15 @@ pub fn read_comments_part(path: &Path) -> Result<Option<String>, Box<dyn std::er
 }
 // ANCHOR_END: read_comments_part
 
+// ANCHOR: read_main_part_bytes
+pub fn read_main_part_bytes(path: &Path) -> Result<Bytes, Box<dyn std::error::Error>> {
+  let document = WordprocessingDocument::new_from_file(path)?;
+  let main_part = document.main_document_part()?;
+
+  Ok(main_part.try_data_bytes(&document)?)
+}
+// ANCHOR_END: read_main_part_bytes
+
 // ANCHOR: remove_settings_part
 pub fn remove_settings_part(path: &Path) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
   let mut document = WordprocessingDocument::new_from_file(path)?;
@@ -104,7 +114,7 @@ pub fn copy_theme_part(
     return Ok(None);
   };
 
-  let theme_data = source_theme.data_to_vec(&source).unwrap_or_default();
+  let theme_data = source_theme.try_data_bytes(&source)?.to_vec();
   target_theme.set_data(&mut target, theme_data)?;
 
   let mut buffer = Cursor::new(Vec::new());
@@ -164,7 +174,6 @@ pub fn search_and_replace_main_document(
 #[cfg(test)]
 mod tests {
   use super::*;
-  use ooxmlsdk::sdk::SdkPart;
   use std::io::Write;
   use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -175,11 +184,11 @@ mod tests {
     let fixture = write_minimal_docx_fixture();
 
     let bytes = round_trip_word_document(&fixture).expect("round trip document");
-    let mut reopened =
+    let reopened =
       WordprocessingDocument::new(Cursor::new(bytes)).expect("reopen round-tripped docx");
     let main_part = reopened.main_document_part().expect("main document part");
     let document = main_part
-      .root_element(&mut reopened)
+      .root_element(&reopened)
       .expect("main document root");
 
     assert!(document.body.is_some());
@@ -229,7 +238,12 @@ mod tests {
       .next()
       .expect("custom XML part");
 
-    assert_eq!(custom_part.relationship_id(), Some("rIdCustomXml"));
+    assert_eq!(
+      main_part
+        .get_id_of_part(&reopened, &custom_part)
+        .expect("custom XML relationship id"),
+      "rIdCustomXml"
+    );
   }
 
   #[test]
@@ -238,6 +252,16 @@ mod tests {
     let comments = read_comments_part(&fixture).expect("read comments");
 
     assert!(comments.expect("comments part").contains("<w:comments"));
+  }
+
+  #[test]
+  fn reads_shared_main_part_bytes() {
+    let fixture = write_minimal_docx_fixture();
+    let bytes = read_main_part_bytes(&fixture).expect("read main part bytes");
+    let shared = bytes.clone();
+
+    assert!(bytes.starts_with(b"<?xml"));
+    assert_eq!(bytes.as_ptr(), shared.as_ptr());
   }
 
   #[test]

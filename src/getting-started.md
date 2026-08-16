@@ -8,10 +8,12 @@ Add `ooxmlsdk` to your Cargo project:
 
 ```toml
 [dependencies]
-ooxmlsdk = "0.10.2"
+ooxmlsdk = "0.13.0"
 ```
 
 The default feature set enables the `parts` APIs used for `.docx`, `.xlsx`, and `.pptx` packages.
+
+The core crate requires Rust 1.88 or newer and uses the Rust 2024 edition.
 
 The documentation examples in this book are backed by real Rust files under `listings/` and are checked with `cargo test --workspace`.
 
@@ -57,21 +59,21 @@ For package APIs without extra feature behavior:
 
 ```toml
 [dependencies]
-ooxmlsdk = { version = "0.10.2", default-features = false, features = ["parts"] }
+ooxmlsdk = { version = "0.13.0", default-features = false, features = ["parts"] }
 ```
 
 For Flat OPC helpers:
 
 ```toml
 [dependencies]
-ooxmlsdk = { version = "0.10.2", default-features = false, features = ["flat-opc"] }
+ooxmlsdk = { version = "0.13.0", default-features = false, features = ["flat-opc"] }
 ```
 
 For MCE processing during package open and root loading:
 
 ```toml
 [dependencies]
-ooxmlsdk = { version = "0.10.2", default-features = false, features = ["mce"] }
+ooxmlsdk = { version = "0.13.0", default-features = false, features = ["mce"] }
 ```
 
 The `validators` feature is used by the validation listing in the Word processing chapter. It validates loaded package roots and generated schema values, and returns structured `ValidationErrorInfo` diagnostics.
@@ -80,7 +82,7 @@ For optional validator APIs:
 
 ```toml
 [dependencies]
-ooxmlsdk = { version = "0.10.2", features = ["validators"] }
+ooxmlsdk = { version = "0.13.0", features = ["validators"] }
 ```
 
 ## Package API
@@ -93,7 +95,7 @@ With `parts` enabled, use the package type that matches the document family:
 
 Common operations include creating packages with `create`, opening packages with `new`, `new_with_settings`, `new_from_file`, or `new_from_file_with_settings`; creating editable packages from templates with `create_from_template`; checking and changing the package document type with `document_type` and `change_document_type`; detecting encrypted Office files with `is_encrypted_office_file` or `is_encrypted_office_file_path`; saving with `save`; inspecting relationships and parts with methods such as `parts`, `get_all_parts`, `get_part_by_id`, and `get_parts_of_type`; and accessing well-known child parts through typed methods such as `main_document_part`, `workbook_part`, `presentation_part`, and `worksheet_parts`.
 
-For lower-level traversal, 0.10.2 exposes related-part helpers that can preserve the relationship id alongside the typed target part. Use those when a package edit needs to update XML `r:id` references and package relationships together.
+For lower-level traversal, 0.13.0 exposes related-part helpers that preserve the relationship ID alongside the typed target Part. Use those when a package edit needs to update XML `r:id` references and package relationships together.
 
 The package types also expose convenience output helpers:
 
@@ -101,6 +103,15 @@ The package types also expose convenience output helpers:
 - `copy_to` writes the package without consuming it.
 - `to_package_bytes` returns an in-memory `Vec<u8>`.
 - `save_as_file` writes directly to a path.
+
+Package values own their storage and are not `Clone`. Typed Part handles are
+cloneable, but must always be used with the package that produced them. See
+[Parts, relationships, and data ownership](general/parts-relationships-and-data.md)
+for relationship-edge identity, shared payloads, and lazy typed-root behavior.
+
+If you are upgrading an existing application, read
+[Migrating to ooxmlsdk 0.13](migrating-to-0.13.md) before adapting generated
+schema construction or low-level package traversal.
 
 ## Version coverage
 
@@ -110,4 +121,4 @@ In practice this covers later DrawingML and chart extensions, SVG and 3D-related
 
 ## Schema values
 
-The generated 0.10.2 schema API uses explicit wrappers for OOXML-specific values. Boolean-like schema attributes use types such as `BooleanValue` and `OnOffValue`, with conversion helpers such as `from_bool()` and `as_bool()`. Many lengths, coordinates, text sizes, and percentages use types from `ooxmlsdk::units`, which preserve the OOXML lexical form while still offering unit conversions.
+The generated 0.13.0 schema API uses explicit wrappers for OOXML-specific values. Boolean-like schema attributes use types such as `BooleanValue` and `OnOffValue`, with conversion helpers such as `from_bool()` and `as_bool()`. Many lengths, coordinates, text sizes, and percentages use types from `ooxmlsdk::units`, which preserve the OOXML lexical form while still offering unit conversions.

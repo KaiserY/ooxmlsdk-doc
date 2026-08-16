@@ -34,4 +34,11 @@ The function returns:
 
 Use raw part data when you need to inspect or copy XML exactly as stored in the package.
 
-Use `root_element` when you want `ooxmlsdk` to parse the part into the generated schema type for that part. Parsing is better when you want typed access to elements and attributes; raw data is better for simple pass-through and diagnostics.
+Use `try_data` for a borrowed byte slice, `try_data_bytes` for an owned shared
+`bytes::Bytes`, or `write_data_to` when forwarding a payload to a writer. Avoid
+`data_to_vec` unless the caller specifically needs a separate mutable copy.
+
+Use `root_element` when you want `ooxmlsdk` to parse the part into the generated schema type for that part. Parsing is better when you want typed access to elements and attributes; raw data is better for simple pass-through and diagnostics. Once a typed root has been loaded, saving serializes that root instead of copying the source XML payload unchanged.
+
+See [Parts, relationships, and data ownership](parts-relationships-and-data.md)
+for the complete payload and root-cache model.

@@ -16,7 +16,7 @@ An Open XML package contains:
 - Part-level relationships, such as `word/_rels/document.xml.rels`.
 - Optional media, embedded objects, custom XML, comments, styles, charts, themes, and other package parts.
 
-`ooxmlsdk` keeps these package concepts visible. The crate does not hide the file format behind a document-editor abstraction; instead, it gives you typed access to the package and schema model.
+`ooxmlsdk` keeps these package concepts visible. The crate does not hide the file format behind a document-editor abstraction; instead, it gives you typed access to the package and schema model. The package owns storage, while typed Part values are package-bound handles used together with `&package` or `&mut package`.
 
 The ZIP container also gives package consumers random access to parts. For example, a tool can inspect a slide part without parsing every slide in the presentation, or remove a comments part from a word-processing package without reading all body paragraphs.
 
@@ -59,16 +59,18 @@ The runtime crate is generated from Open XML metadata. The generated surface inc
 - Generated simple type support in `ooxmlsdk::simple_type`.
 - OOXML measure and percentage helpers in `ooxmlsdk::units`.
 
-Most package operations return `Result<_, ooxmlsdk::common::SdkError>` or can be used with `Box<dyn std::error::Error>` in examples. Optional package relationships are represented with `Option`, and collections are exposed through Rust iterators or vectors depending on the generated schema shape.
+Most package operations return `Result<_, ooxmlsdk::common::SdkError>` or can be used with `Box<dyn std::error::Error>` in examples. Optional package relationships are represented with `Option`, and collections are exposed through Rust iterators or vectors depending on the generated schema shape. `RelatedPart<T>` retains the relationship ID and type beside a typed target when edge identity matters.
 
-In `ooxmlsdk` 0.10.2, generated schema fields use explicit simple value wrappers for OOXML booleans and typed unit values for many measures and percentages. Convert those values at the boundary of your application instead of assuming every schema attribute is a Rust `bool`, integer, or string.
+Part payloads can be borrowed as byte slices, retained as shared immutable `bytes::Bytes`, copied into `Vec<u8>`, or parsed as typed roots. Choose the form that matches the ownership required by the caller rather than copying every payload by default.
+
+In `ooxmlsdk` 0.13.0, generated schema fields use explicit simple value wrappers for OOXML booleans and typed unit values for many measures and percentages. Convert those values at the boundary of your application instead of assuming every schema attribute is a Rust `bool`, integer, or string.
 
 ## Common tasks
 
 `ooxmlsdk` supports the same broad task categories that matter when working with Open XML packages:
 
 - **Strongly typed package and schema access**: use generated Rust types instead of hand-writing every element and attribute name.
-- **Content construction, search, and manipulation**: traverse package relationships, inspect XML parts, load generated roots, and save updated packages. Use typed child accessors for well-known parts, or related-part traversal helpers when you need to keep the relationship id with the target part.
+- **Content construction, search, and manipulation**: traverse package relationships, inspect XML parts, load generated roots, and save updated packages. Use typed child accessors for well-known parts, or related-part traversal helpers when you need to keep each relationship ID with the target Part.
 - **Validation-oriented workflows**: rely on explicit `Result` handling plus package/schema tests, and enable the optional `validators` feature when you need structured schema diagnostics.
 
 ## Feature model
@@ -90,3 +92,24 @@ The generated runtime uses Office 2007 as the compatibility baseline and include
 In practice this includes later DrawingML and chart extensions, SVG and 3D-related parts, threaded comments, dynamic-array-era spreadsheet extensions, and other post-2007 additions tracked by Open XML SDK metadata.
 
 This means newer package parts and schema types are available from the Rust crate, but document validity still depends on the XML you construct and the target applications that will consume the file.
+
+## Round-trip coverage
+
+The adjacent [`ooxmlsdk-test-suite`](https://github.com/KaiserY/ooxmlsdk-test-suite)
+opens, saves, reopens, and compares package graphs, relationship edges, ZIP
+entries, canonical XML, and binary payloads across upstream fixture corpora.
+Manifest exceptions remain executable open-only or invalid-package tests rather
+than skipped files.
+
+| Corpus | Files | Round-trip candidates | Open-only | Invalid | Result |
+| --- | ---: | ---: | ---: | ---: | --- |
+| Apache POI | 682 | 613 | 5 | 64 | 682 passed / 0 failed |
+| LibreOffice | 3,388 | 3,358 | 4 | 26 | 3,388 passed / 0 failed |
+| Open XML SDK | 886 | 880 | 3 | 3 | 886 passed / 0 failed |
+| Pandoc | 235 | 235 | 0 | 0 | 235 passed / 0 failed |
+| ClosedXML | 286 | 284 | 0 | 2 | 286 passed / 0 failed |
+| **Total** | **5,477** | **5,370** | **12** | **95** | **5,477 passed / 0 failed** |
+
+The last full five-corpus run completed on 2026-08-16. This coverage measures
+package and serialization fidelity; it does not claim application layout or
+rendering equivalence.

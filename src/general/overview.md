@@ -7,6 +7,7 @@ Start here when you need to understand how the Rust crate opens packages, naviga
 ## In this section
 
 - [Cargo feature flags](features.md)
+- [Parts, relationships, and data ownership](parts-relationships-and-data.md)
 - [Introduction to markup compatibility](introduction-to-markup-compatibility.md)
 - [Add a new document part that receives a relationship ID to a package](how-to-add-a-new-document-part-that-receives-a-relationship-id-to-a-package.md)
 - [Add a new document part to a package](how-to-add-a-new-document-part-to-a-package.md)

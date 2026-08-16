@@ -17,9 +17,9 @@ The example uses lazy package opening:
 - `workbook_part()`
 - `worksheet_parts(&document)`
 
-Lazy opening is useful for inspection helpers because it lets you navigate the package model without parsing every root element up front.
+Lazy opening is useful for inspection helpers because it lets you navigate the package model without parsing every root element up front. `PackageOpenMode` controls typed-root loading, not read/write permissions.
 
-The same read-only pattern applies whether the input comes from a file path or a stream-like byte source. With ooxmlsdk, choose the constructor that matches your source, keep the package in inspection mode, and do not call save methods. This mirrors the upstream guidance of using non-editable open modes when the caller only needs to retrieve information.
+The same read-only pattern applies whether the input comes from a file path or a seekable reader. Unlike the upstream editable flag, `ooxmlsdk` uses Rust mutability and an explicit save operation: keep the package binding immutable and do not call a save method when the caller only needs information.
 
 ## Spreadsheet package structure
 

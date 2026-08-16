@@ -19,7 +19,7 @@ The example uses lazy package opening:
 - `presentation_part()`
 - `slide_parts(&document)`
 
-Lazy opening is useful for inspection helpers because it lets you navigate the package model without parsing every root element up front.
+Lazy opening is useful for inspection helpers because it lets you navigate the package model without parsing every root element up front. `PackageOpenMode` controls typed-root loading rather than read/write permissions; an immutable package binding and the absence of a save call define this read-only helper.
 
 If a caller asks for a slide index that is out of range, return an error or an empty result deliberately. The upstream sample can throw an out-of-range exception; Rust examples should make that behavior explicit in their `Result` or `Option` shape.
 

@@ -20,7 +20,7 @@ Rust code uses `rustfmt` with the repository settings in `.rustfmt.toml`. Prefer
 
 ## Testing Guidelines
 
-All Rust shown in documentation must come from `listings/` and pass `cargo test --workspace`. Use mdBook anchors to expose only the documentation-ready portion of a Rust file; keep fixtures and tests outside the included anchor. If an upstream Open XML SDK scenario is not supported by `ooxmlsdk 0.6.1`, document the limitation instead of inventing an API.
+All Rust shown in documentation must come from `listings/` and pass `cargo test --workspace`. Use mdBook anchors to expose only the documentation-ready portion of a Rust file; keep fixtures and tests outside the included anchor. If an upstream Open XML SDK scenario is not supported by `ooxmlsdk 0.13.0`, document the limitation instead of inventing an API.
 
 ## Reference Sources
 
@@ -28,7 +28,7 @@ Use upstream documentation and crate source to keep ports accurate. Prefer local
 
 ## Commit & Pull Request Guidelines
 
-Recent commits use short imperative or conventional-style messages, for example `docs: port chapters to ooxmlsdk 0.6.1` and `add listings framework`. Prefer `docs: ...` for documentation ports and `listings: ...` for example infrastructure. Pull requests should summarize changed chapters, list added/updated listing crates, and include verification commands run.
+Recent commits use short imperative or conventional-style messages, for example `docs: update book for ooxmlsdk 0.13.0` and `add listings framework`. Prefer `docs: ...` for documentation ports and `listings: ...` for example infrastructure. Pull requests should summarize changed chapters, list added/updated listing crates, and include verification commands run.
 
 ## Agent-Specific Instructions
 

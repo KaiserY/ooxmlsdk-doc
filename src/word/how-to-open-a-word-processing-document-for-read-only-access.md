@@ -17,7 +17,7 @@ The example uses lazy package opening:
 - `main_document_part()`
 - `data_as_str(&document)`
 
-Lazy opening is useful for read-only inspection because it lets you navigate package parts without parsing every root element up front.
+Lazy opening is useful for read-only inspection because it lets you navigate package parts without parsing every root element up front. `PackageOpenMode` controls typed-root loading, not read/write permissions; use an immutable package binding and avoid save calls when the helper is intended only for inspection.
 
 The same read-only pattern applies to path-based and stream-based inputs. A valid word processing package has at least a main document part; optional parts such as styles, comments, settings, headers, and footers may be absent and should be handled with `Option`-style control flow.
 

@@ -2,7 +2,7 @@
 
 This example removes the Wordprocessing settings part from a `.docx` package.
 
-In Open XML, removing a child part means removing the relationship from the parent part and marking the target part as deleted in the package model. `ooxmlsdk` handles that through `delete_part`.
+In Open XML, removing a child Part starts by removing a relationship from the parent. `ooxmlsdk` deletes the target payload only when it is no longer reachable through another package or Part relationship. The typed `delete_part` helper is convenient for a known unique child.
 
 ## Settings element
 
@@ -32,6 +32,10 @@ The function:
 5. Saves the updated package to memory.
 
 If the settings part is not present, the function leaves the package unchanged and still returns saved package bytes.
+
+When several relationship IDs target the same Part, select the intended edge
+with `delete_part_by_id`. A target Part does not own one relationship ID, and
+removing one edge must not silently remove its remaining references.
 
 ## Optional parts
 

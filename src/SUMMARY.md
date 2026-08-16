@@ -4,10 +4,12 @@
 
 - [Overview](open-xml-sdk.md)
 - [Getting started](getting-started.md)
+  - [Migrating to ooxmlsdk 0.13](migrating-to-0.13.md)
   - [About ooxmlsdk](about-the-open-xml-sdk.md)
   - [Design considerations](open-xml-sdk-design-considerations.md)
 - [General](general/overview.md)
   - [Cargo feature flags](general/features.md)
+  - [Parts, relationships, and data ownership](general/parts-relationships-and-data.md)
   - [Introduction to markup compatibility](general/introduction-to-markup-compatibility.md)
   - [Add a new document part that receives a relationship ID to a package](general/how-to-add-a-new-document-part-that-receives-a-relationship-id-to-a-package.md)
   - [Add a new document part to a package](general/how-to-add-a-new-document-part-to-a-package.md)

@@ -25,7 +25,13 @@ Before using `ooxmlsdk`, be clear about the level of abstraction it provides.
 
 Use normal Rust error handling around package operations. Open, parse, and save calls can fail because input packages may be malformed, relationships may point to missing parts, XML may not match the generated schema, or the output writer may fail.
 
-Keep ownership explicit. Load a package into a document type, mutate typed parts or root elements through `&mut` bindings, then call `save` with an output writer or file path flow that your application owns. When direct XML access is unavoidable, treat it as package-level editing and revalidate the affected parts.
+Keep ownership explicit. A document package is the sole owner of its storage and is not `Clone`. Typed Part handles are cheap to clone but remain bound to that package; pass `&package` for reads and `&mut package` for changes. Cross-package operations must copy through APIs such as `add_part_from_package` instead of resolving a source handle against a destination package.
+
+Relationship IDs identify edges from one relationship source. They are not identities owned by target Parts, and several IDs can target the same Part. Preserve `RelatedPart` values or explicit relationship IDs whenever an edit must update both XML `r:id` references and package relationships.
+
+Load a package into a document type, mutate raw Part data or typed root elements deliberately, then call `save` with an output writer or file path flow that your application owns. Lazy opening avoids parsing every typed root. Untouched lazy payloads can be reused, but a loaded root is serialized on save; replacing raw data unloads that root. When direct XML access is unavoidable, treat it as package-level editing and revalidate the affected parts.
+
+Package readers and schema XML readers serve different constraints. Package constructors require `Read + Seek` for ZIP access; a generic reader is consumed during open and copied into shared in-memory archive storage. Generated root types separately offer a borrowed `from_bytes` path and a streaming `from_reader` path for `BufRead` XML sources.
 
 Generated schema fields model OOXML values, not only primitive Rust values. Boolean-like attributes, measurements, coordinates, and percentages may use `simple_type` or `units` wrappers so unknown lexical forms, compatibility values, and unit categories can round-trip correctly.
 

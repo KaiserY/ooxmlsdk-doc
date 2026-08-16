@@ -12,7 +12,7 @@ Add the feature to your manifest:
 
 ```toml
 [dependencies]
-ooxmlsdk = { version = "0.10.2", default-features = false, features = ["mce"] }
+ooxmlsdk = { version = "0.13.0", default-features = false, features = ["mce"] }
 ```
 
 The `mce` feature also enables `parts`.
@@ -57,4 +57,15 @@ Setting the target to `Office2013`, for example, means Office 2010 and Office 20
 
 MCE processing changes the loaded root elements. If you save a package after processing, the saved package reflects the processed content. Use `NoProcess` when you want to inspect or round-trip MCE markup without filtering it.
 
-Without the `mce` feature, the generated XML reader/writer still preserves common compatibility markup for stable round trips, including `mc:*` attributes and `mc:AlternateContent`. The feature is needed when your application wants the crate to actively choose compatibility branches and filter unknown content during loading.
+Without the `mce` feature, generated XML parsing still recognizes supported
+`mc:AlternateContent` positions and preserves schema-modeled compatibility
+markup for stable round trips. The feature is needed when an application wants
+the crate to actively choose compatibility branches and filter content during
+loading.
+
+Namespace prefixes are aliases, not schema identities. The 0.13 reader resolves
+known Strict and Transitional namespace URIs, non-canonical element prefixes,
+prefixed attributes, and prefixes listed by MCE attributes. Serialization uses
+the canonical OOXML prefix for each known namespace, so an input such as a
+WordprocessingML `ns0:document` can be written as `w:document` without changing
+its namespace meaning.

@@ -8,6 +8,10 @@ The upstream sample creates a WordprocessingML package and assigns specific rela
 
 Open XML relationships are identified by strings such as `rId1`. Relationship IDs are scoped to the package or part that owns the relationship file. A relationship ID under `word/document.xml` is separate from a relationship ID under another part.
 
+The ID identifies that relationship edge rather than the target Part. A source
+can contain multiple IDs that target the same Part, so use plural `RelatedPart`
+APIs when all existing edge IDs must be preserved.
+
 When you do not care about the exact ID, prefer the auto-ID methods. They avoid collisions with existing relationships.
 
 When interoperating with code that expects a specific relationship ID, use a `*_with_id` method and handle the error if that ID is already in use.

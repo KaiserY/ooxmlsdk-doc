@@ -16,7 +16,7 @@ WordprocessingML and SpreadsheetML packages can have zero or one Theme part asso
 {{#include ../../listings/getting-started/src/lib.rs:copy_theme_part}}
 ```
 
-The function opens the source package and target package, finds each main document part, looks up each theme part, copies the source bytes, and saves the updated target package to memory.
+The function opens the source package and target package, finds each main document part, looks up each theme part, obtains the source payload as shared `Bytes`, copies it into the target Part's replacement buffer, and saves the updated target package to memory.
 
 This is a raw part-data copy. It does not parse or validate the theme XML.
 
@@ -29,5 +29,10 @@ Raw part copying is useful when:
 - The source and target part types are the same.
 
 Use generated schema root elements instead when you need to read or modify specific XML elements or attributes.
+
+When the complete typed Part and its child graph should move between packages,
+prefer `add_part_from_package` over manually resolving a source Part handle
+against the destination package. Part handles are package-bound and report
+`SdkError::ForeignPart` when used with the wrong owner.
 
 Before running this workflow on real files, make sure the source document actually has a Theme part. If the target lacks one, create it first, as shown in [Replace the theme part in a word processing document](how-to-replace-the-theme-part-in-a-word-processing-document.md).

@@ -2,7 +2,7 @@
 
 `ooxmlsdk` is a Rust library for reading, writing, and round-tripping Office Open XML packages such as `.docx`, `.xlsx`, and `.pptx`.
 
-This documentation targets `ooxmlsdk` 0.10.2. Unless a page explicitly says otherwise, all API descriptions, limitations, and examples refer to 0.10.2.
+This documentation targets `ooxmlsdk` 0.13.0. Unless a page explicitly says otherwise, all API descriptions, limitations, and examples refer to 0.13.0.
 
 Core project links:
 
@@ -19,6 +19,7 @@ The crate provides generated schema types, serializers, deserializers, and stron
 ## Start here
 
 - [Getting started](getting-started.md)
+- [Migrating to ooxmlsdk 0.13](migrating-to-0.13.md)
 - [About ooxmlsdk](about-the-open-xml-sdk.md)
 - [Design considerations](open-xml-sdk-design-considerations.md)
 
